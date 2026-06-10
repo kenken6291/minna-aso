@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>みんあそくん ― 思い出の場所から、今の仲間へ</title>
+<style>
+  /* ── Design tokens ── */
+  :root {
+    --sky:    #4A90C8;
+    --sky-lt: #D6EAFA;
+    --amber:  #E8873A;
+    --amber-lt:#FDF0E3;
+    --sage:   #5A8A6A;
+    --sage-lt:#E2F0E6;
+    --ink:    #2B2B2B;
+    --mist:   #F5F7FA;
+    --white:  #FFFFFF;
+    --border: #D4DCE5;
+    --r:      12px;
+    --shadow: 0 2px 12px rgba(0,0,0,.08);
+    --fs-xl:  1.6rem;
+    --fs-lg:  1.25rem;
+    --fs-md:  1.05rem;
+    --fs-sm:  0.9rem;
+  }
+
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 18px; scroll-behavior: smooth; }
+  body { font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+         background: var(--mist); color: var(--ink); line-height: 1.7; }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--sky) 0%, #2E6FAA 100%);
+    color: #fff; padding: 0 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -.01em;
+          display:flex; align-items:center; gap:.4rem; }
+  .logo span.tag { font-size:.65rem; background:var(--amber);
+                   color:#fff; padding:1px 6px; border-radius:20px;
+                   font-weight:700; letter-spacing:.03em; }
+
+  /* ════════════════════════════════════════════
+     ナビゲーション — デバイス自動切替
+     PC(769px〜)  : 上部タブバー
+     スマホ(〜768px): 画面下部固定ナビ（親指で操作）
+     ════════════════════════════════════════════ */
+  nav.tabs {
+    background: var(--white); border-bottom: 2px solid var(--border);
+    display: flex; overflow-x: auto; gap: 0;
+    position: sticky; top: 64px; z-index: 90;
+    scrollbar-width: none;
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button {
+    flex: 0 0 auto; padding: .8rem 1.2rem;
+    border: none; background: transparent; cursor: pointer;
+    font-size: var(--fs-sm); font-weight: 600; color: #777;
+    border-bottom: 3px solid transparent; transition: .2s;
+    white-space: nowrap; font-family: inherit;
+  }
+  nav.tabs button .nav-ico   { display: inline; }
+  nav.tabs button .nav-label { display: inline; }
+  nav.tabs button.active { color: var(--sky); border-bottom-color: var(--sky); }
+  nav.tabs button:hover  { color: var(--sky); background: var(--sky-lt); }
+
+  /* ── スマホ：下部固定ナビに変身 ── */
+  @media (max-width: 768px) {
+    nav.tabs {
+      position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+      border-bottom: none; border-top: 1.5px solid var(--border);
+      box-shadow: 0 -2px 12px rgba(0,0,0,.10);
+      justify-content: space-around;
+      padding-bottom: env(safe-area-inset-bottom); /* iPhoneホームバー回避 */
+      z-index: 200;
+    }
+    nav.tabs button {
+      flex: 1 1 0; padding: .45rem .2rem .55rem;
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      border-bottom: none; border-top: 3px solid transparent;
+      min-height: 56px; /* タップしやすい高さ */
+    }
+    nav.tabs button .nav-ico   { font-size: 1.35rem; line-height: 1.2; }
+    nav.tabs button .nav-label { font-size: .62rem; font-weight: 700; }
+    nav.tabs button.active { border-top-color: var(--sky); background: var(--sky-lt); }
+    /* 下部ナビに隠れないよう本文に余白 */
+    body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  }
+
+  /* ── Sections ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-wrap { max-width: 860px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white); border-radius: var(--r);
+    box-shadow: var(--shadow); padding: 1.4rem 1.5rem; margin-bottom: 1.2rem;
+  }
+  .card-title {
+    font-size: var(--fs-lg); font-weight: 800; margin-bottom: .8rem;
+    display: flex; align-items: center; gap: .4rem;
+  }
+
+  /* ── Form elements ── */
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; padding: .75rem 1rem; font-size: var(--fs-md);
+    border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--mist); outline: none; transition: .2s;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--sky); background: #fff;
+    box-shadow: 0 0 0 3px rgba(74,144,200,.15);
+  }
+  label.lbl { font-size: var(--fs-sm); font-weight: 700;
+              color: #555; display:block; margin-bottom:.35rem; }
+
+  .field { margin-bottom: 1rem; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .7rem 1.4rem; border: none; border-radius: 8px;
+    font-size: var(--fs-md); font-weight: 700; cursor: pointer;
+    transition: .18s; font-family: inherit;
+  }
+  .btn-sky  { background: var(--sky); color: #fff; }
+  .btn-sky:hover { background: #3578b0; }
+  .btn-amber { background: var(--amber); color: #fff; }
+  .btn-amber:hover { background: #c96e22; }
+  .btn-sage  { background: var(--sage); color: #fff; }
+  .btn-sage:hover { background: #477056; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: #555; }
+  .btn-ghost:hover { background: var(--mist); }
+  .btn-sm { padding: .45rem .9rem; font-size: var(--fs-sm); }
+  .btn-danger { background: #e05555; color: #fff; }
+  .btn-danger:hover { background: #c43e3e; }
+
+  /* ── Hero banner ── */
+  .hero {
+    background: linear-gradient(135deg, #2E6FAA 0%, #5A8A6A 100%);
+    color: #fff; border-radius: var(--r); padding: 2rem 1.5rem 1.8rem;
+    margin-bottom: 1.5rem; position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: '🗺️🎪'; font-size: 5rem; position: absolute;
+    right: -1rem; top: 50%; transform: translateY(-50%); opacity: .15;
+    pointer-events: none; line-height:1;
+  }
+  .hero h1 { font-size: 1.5rem; font-weight: 900; margin-bottom: .5rem; }
+  .hero p  { font-size: var(--fs-sm); opacity: .9; max-width: 520px; }
+
+  /* ── Map / SV panels — PC:左右並び / スマホ:縦積み ── */
+  .map-sv-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+  #map-container {
+    width: 100%; height: 280px; border-radius: 10px; overflow: hidden;
+    border: 1.5px solid var(--border); background: #e8f0f8;
+    display: flex; align-items:center; justify-content:center; color:#888;
+    font-size: var(--fs-sm);
+  }
+  #sv-container {
+    width: 100%; height: 300px; border-radius: 10px; overflow: hidden;
+    border: 1.5px solid var(--border); background: #f0f4f8;
+    display: flex; align-items:center; justify-content:center; color:#888;
+    font-size: var(--fs-sm);
+  }
+  @media (min-width: 769px) {
+    .map-sv-grid { grid-template-columns: 1fr 1fr; }
+    #map-container, #sv-container { height: 420px; }
+  }
+  @media (min-width: 1200px) {
+    #map-container, #sv-container { height: 500px; }
+  }
+
+  /* ── Favorites ── */
+  .fav-list { display: grid; gap: .7rem; }
+  .fav-item {
+    background: var(--sky-lt); border-radius: 8px; padding: .75rem 1rem;
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    cursor: pointer; transition: .15s;
+  }
+  .fav-item:hover { background: #c4dff5; }
+  .fav-item .fav-name { font-weight: 700; font-size: var(--fs-md); }
+  .fav-item .fav-meta { font-size: var(--fs-sm); color: #666; }
+  .fav-actions { display:flex; gap:.4rem; flex-shrink:0; }
+
+  /* ── Idea / Event cards ── */
+  .idea-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: .8rem;
+  }
+  .idea-card .ic-header { display:flex; align-items:flex-start; justify-content:space-between; gap:.5rem; }
+  .idea-card .ic-title { font-size: var(--fs-md); font-weight: 800; }
+  .idea-card .ic-body  { font-size: var(--fs-sm); color: #555; margin-top: .3rem; }
+  .idea-card .ic-meta  { font-size: var(--fs-sm); color: #888; margin-top: .5rem;
+                         display:flex; gap:1rem; flex-wrap:wrap; }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: .75rem; font-weight: 700;
+  }
+  .badge-sky   { background: var(--sky-lt); color: var(--sky); }
+  .badge-amber { background: var(--amber-lt); color: var(--amber); }
+  .badge-sage  { background: var(--sage-lt); color: var(--sage); }
+
+  /* ── Interest tags ── */
+  .tag-grid { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .tag-btn {
+    padding: .5rem 1rem; border-radius: 20px; font-size: var(--fs-sm);
+    font-weight: 700; border: 2px solid var(--border); background: var(--white);
+    cursor: pointer; transition: .15s; font-family: inherit;
+  }
+  .tag-btn.selected { border-color: var(--sky); background: var(--sky-lt); color: var(--sky); }
+
+  /* ── Members grid ── */
+  .members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap:.8rem; }
+  .member-card {
+    background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: .9rem 1rem; text-align:center;
+  }
+  .member-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--sky); color: #fff; font-size: 1.3rem;
+    display:flex; align-items:center; justify-content:center;
+    margin: 0 auto .5rem;
+  }
+  .member-name { font-weight: 800; font-size: var(--fs-sm); }
+  .member-tags { display:flex; flex-wrap:wrap; gap:.3rem; justify-content:center; margin-top:.4rem; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(2rem);
+    background: #1a1a2e; color: #fff; padding: .7rem 1.5rem; border-radius: 30px;
+    font-size: var(--fs-sm); font-weight: 600; z-index:999;
+    opacity: 0; transition: .3s; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── Place-to-event CTA ── */
+  .place-cta {
+    background: linear-gradient(135deg, var(--amber-lt), #fff7ee);
+    border: 2px solid var(--amber); border-radius: 10px;
+    padding: 1rem 1.2rem; margin-top: 1rem;
+    display: flex; align-items:center; justify-content:space-between; gap:.8rem;
+    flex-wrap:wrap;
+  }
+  .place-cta p { font-size: var(--fs-sm); font-weight: 700; color: #a05800; }
+
+  /* ── Divider ── */
+  .divider { height:1px; background:var(--border); margin:1.2rem 0; }
+
+  /* ── Empty state ── */
+  .empty { text-align:center; padding:2.5rem 1rem; color:#aaa; font-size:var(--fs-sm); }
+  .empty .empty-icon { font-size: 2.5rem; margin-bottom: .5rem; }
+
+  /* ── Notice box ── */
+  .notice {
+    background: #fffbe6; border:1.5px solid #f5d45a; border-radius:8px;
+    padding: .7rem 1rem; font-size: var(--fs-sm); color: #7a5f00; margin-bottom:1rem;
+  }
+
+  /* ── Help board ── */
+  .help-card {
+    border-left: 4px solid var(--sky); background:var(--white);
+    border-radius: 0 10px 10px 0; padding:.9rem 1rem; margin-bottom:.7rem;
+  }
+  .help-card.skill { border-left-color: var(--sage); }
+  .help-card .hc-title { font-weight:800; font-size:var(--fs-md); }
+  .help-card .hc-meta  { font-size:var(--fs-sm); color:#777; margin-top:.25rem; }
+
+  /* ════════════════════════════════════════════
+     画面サイズ自動最適化（3段階）
+     ════════════════════════════════════════════ */
+
+  /* ── PC（769px〜）: 広い画面を活かす ── */
+  @media (min-width: 769px) {
+    .section-wrap { max-width: 1100px; padding: 2rem 2rem 4rem; }
+    /* カード2カラム化（アイデア・イベント一覧） */
+    #ideasList, #eventsList, #helpList {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .8rem;
+      align-items: start;
+    }
+    #ideasList .empty, #eventsList .empty, #helpList .empty { grid-column: 1 / -1; }
+    .idea-card, .help-card { margin-bottom: 0; }
+    .members-grid { grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); }
+    .hero { padding: 2.5rem 2.5rem 2.2rem; }
+    .hero h1 { font-size: 1.8rem; }
+    .hero p { max-width: 640px; font-size: 1rem; }
+  }
+
+  /* ── タブレット（601〜768px） ── */
+  @media (min-width: 601px) and (max-width: 768px) {
+    .section-wrap { max-width: 720px; }
+  }
+
+  /* ── スマホ（〜600px）: 大きな文字とタップ領域 ── */
+  @media (max-width: 600px) {
+    html { font-size: 16px; }
+    header { height: 56px; padding: 0 1rem; }
+    .logo { font-size: 1.05rem; }
+    .logo span.tag { display: none; }  /* 狭い画面では省略 */
+    .hero { padding: 1.4rem 1.2rem 1.3rem; }
+    .hero h1 { font-size: 1.2rem; }
+    .hero::after { font-size: 3.2rem; }
+    .card { padding: 1.1rem 1rem; }
+    /* ボタンは指で押しやすく（最低44px） */
+    .btn { min-height: 44px; }
+    .tag-btn { min-height: 42px; padding: .5rem .9rem; }
+    /* お気に入りは縦積みで操作ボタンを下に */
+    .fav-item { flex-direction: column; align-items: stretch; }
+    .fav-actions { justify-content: flex-end; }
+    /* CTAも縦積み */
+    .place-cta { flex-direction: column; align-items: stretch; text-align: center; }
+    .place-cta .btn { justify-content: center; }
+    /* トーストを下部ナビの上に表示 */
+    #toast { bottom: calc(84px + env(safe-area-inset-bottom)); max-width: 92vw; white-space: normal; text-align: center; }
+  }
+
+  /* ── タッチ端末全般: ホバー無効化・タップ反応 ── */
+  @media (hover: none) {
+    nav.tabs button:hover { background: transparent; }
+    .btn:active { transform: scale(.97); }
+    .tag-btn:active { transform: scale(.95); }
+    .fav-item:active { background: #c4dff5; }
+  }
+
+  /* ── マウス端末のみ: ホバーエフェクト ── */
+  @media (hover: hover) {
+    .card { transition: box-shadow .2s; }
+    .idea-card:hover, .help-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.10); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    🎪 みんあそくん
+    <span class="tag">思い出 × 仲間</span>
+  </div>
+  <button class="btn btn-ghost btn-sm" id="profileBtn" style="color:#fff;border-color:rgba(255,255,255,.4)">
+    👤 <span id="headerNick">ゲスト</span>
+  </button>
+</header>
+
+<!-- ══ TAB NAV（PC:上部タブ / スマホ:下部固定ナビに自動切替） ══ -->
+<nav class="tabs" id="mainTabs">
+  <button class="active" data-tab="map"><span class="nav-ico">🗺️</span> <span class="nav-label">あの場所の今</span></button>
+  <button data-tab="connect"><span class="nav-ico">🤝</span> <span class="nav-label">仲間を探す</span></button>
+  <button data-tab="ideas"><span class="nav-ico">💡</span> <span class="nav-label">やってみよう</span></button>
+  <button data-tab="events"><span class="nav-ico">📣</span> <span class="nav-label">イベント</span></button>
+  <button data-tab="help"><span class="nav-ico">🙋</span> <span class="nav-label">助け合い</span></button>
+  <button data-tab="profile"><span class="nav-ico">👤</span> <span class="nav-label">プロフィール</span></button>
+</nav>
+
+<!-- ══ TAB: MAP ══ -->
+<div class="tab-panel active" id="tab-map">
+  <div class="section-wrap">
+    <div class="hero">
+      <h1>🗺️ あの場所の今を見に行こう</h1>
+      <p>昔住んでいた場所、母校、思い出の街角を検索して、ストリートビューで今の姿を確認。そのままイベント企画にも使えます。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📍 場所を検索</div>
+      <div class="field">
+        <label class="lbl">住所・施設名・キーワード</label>
+        <div style="display:flex;gap:.5rem;">
+          <input type="text" id="mapSearch" placeholder="例：渋谷区道玄坂、〇〇小学校…" />
+          <button class="btn btn-sky" id="searchBtn">🔍</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <div class="field" style="flex:1;min-width:120px;">
+          <label class="lbl">当時の西暦（任意）</label>
+          <input type="number" id="yearInput" placeholder="1985" min="1900" max="2025" />
+        </div>
+        <div class="field" style="flex:2;min-width:180px;">
+          <label class="lbl">思い出メモ（任意）</label>
+          <input type="text" id="memoInput" placeholder="修学旅行で来た場所…" />
+        </div>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+        <button class="btn btn-sky" id="showMapBtn">🗺️ 地図で見る</button>
+        <button class="btn btn-ghost" id="addFavBtn">♡ お気に入りに追加</button>
+      </div>
+    </div>
+
+    <!-- Map + Street View（PC:左右並び / スマホ:縦積み） -->
+    <div class="map-sv-grid">
+      <div id="map-container">📌 住所を入力して検索してください</div>
+      <div id="sv-container">🔭 検索するとストリートビューが表示されます</div>
+    </div>
+
+    <!-- Place → Event CTA -->
+    <div class="place-cta" id="placeCta" style="display:none">
+      <p>📣 この場所でイベントを企画しませんか？</p>
+      <button class="btn btn-amber btn-sm" id="placeToEventBtn">イベント企画へ →</button>
+    </div>
+
+    <!-- Favorites -->
+    <div class="card" style="margin-top:1.2rem;">
+      <div class="card-title" style="justify-content:space-between;">
+        <span>💛 お気に入りリスト</span>
+        <button class="btn btn-ghost btn-sm" id="clearFavBtn">🗑 全削除</button>
+      </div>
+      <div id="favList">
+        <div class="empty"><div class="empty-icon">📭</div>まだお気に入りはありません。<br>場所を検索して追加しましょう！</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: CONNECT ══ -->
+<div class="tab-panel" id="tab-connect">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#5A8A6A,#2E6FAA)">
+      <h1>🤝 興味でつながる</h1>
+      <p>共通の趣味・関心を持つ仲間を見つけましょう。タップした興味と一致するメンバーが表示されます。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏷 興味を選ぶ</div>
+      <div class="tag-grid" id="interestFilterTags"></div>
+    </div>
+    <div id="membersList">
+      <div class="empty"><div class="empty-icon">👥</div>興味を選ぶと仲間が表示されます</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: IDEAS ══ -->
+<div class="tab-panel" id="tab-ideas">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#E8873A,#c96e22)">
+      <h1>💡 やってみようボード</h1>
+      <p>「これ面白そう！」を投稿して仲間を集めましょう。3人集まると企画チームが生まれます。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✏️ 新しいアイデアを投稿</div>
+      <div class="field">
+        <label class="lbl">カテゴリー</label>
+        <div class="tag-grid" id="catTags">
+          <button class="tag-btn selected" data-cat="食事">🍜 食事</button>
+          <button class="tag-btn" data-cat="屋外">⛺ 屋外</button>
+          <button class="tag-btn" data-cat="運動">🎾 運動</button>
+          <button class="tag-btn" data-cat="旅行">✈️ 旅行</button>
+          <button class="tag-btn" data-cat="学び">📚 学び</button>
+          <button class="tag-btn" data-cat="趣味">🎨 趣味</button>
+          <button class="tag-btn" data-cat="ドライブ">🚗 ドライブ</button>
+          <button class="tag-btn" data-cat="思い出">🗺️ 思い出の場所</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">やってみたいこと</label>
+        <input type="text" id="ideaTitle" placeholder="昔の通学路を一緒に歩いてみたい…" />
+      </div>
+      <div class="field">
+        <label class="lbl">ひとこと説明</label>
+        <textarea id="ideaDesc" rows="3" placeholder="詳しく教えてください…"></textarea>
+      </div>
+      <div class="field">
+        <label class="lbl">場所（任意）</label>
+        <input type="text" id="ideaPlace" placeholder="渋谷・新宿 など" />
+      </div>
+      <button class="btn btn-amber" id="postIdeaBtn">この指とまれ！で投稿</button>
+    </div>
+
+    <div id="ideasList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: EVENTS ══ -->
+<div class="tab-panel" id="tab-events">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#2E6FAA,#E8873A)">
+      <h1>📣 公開イベント</h1>
+      <p>企画が完成したイベントはここで公開されます。参加表明して一緒に楽しみましょう！</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">➕ イベントを公開する</div>
+      <div class="field">
+        <label class="lbl">イベント名</label>
+        <input type="text" id="evTitle" placeholder="〇〇公園でお花見" />
+      </div>
+      <div style="display:flex;gap:.8rem;flex-wrap:wrap;">
+        <div class="field" style="flex:1;min-width:130px;">
+          <label class="lbl">日程</label>
+          <input type="text" id="evDate" placeholder="6月29日（土）" />
+        </div>
+        <div class="field" style="flex:1;min-width:130px;">
+          <label class="lbl">場所</label>
+          <input type="text" id="evPlace" placeholder="代々木公園" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">詳細・集合場所など</label>
+        <textarea id="evDesc" rows="2" placeholder="詳細を入力…"></textarea>
+      </div>
+      <button class="btn btn-sky" id="postEventBtn">📣 公開する</button>
+    </div>
+
+    <div id="eventsList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: HELP ══ -->
+<div class="tab-panel" id="tab-help">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#5A8A6A,#3a7a5a)">
+      <h1>🙋 助け合い掲示板</h1>
+      <p>「車を出してほしい」「スマホを教えてほしい」などのニーズと、「運転なら任せて」「PC得意です」をつなぎます。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✏️ 投稿する</div>
+      <div class="field">
+        <label class="lbl">種類</label>
+        <div style="display:flex;gap:.6rem;">
+          <button class="tag-btn selected" id="helpTypeNeed" data-type="need">🙋 困っていること</button>
+          <button class="tag-btn" id="helpTypeSkill" data-type="skill">💪 できること</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">ひとこと</label>
+        <input type="text" id="helpTitle" placeholder="スマホの操作を教えてほしい / 運転ならお任せ…" />
+      </div>
+      <div class="field">
+        <label class="lbl">タグ（複数OK）</label>
+        <div class="tag-grid" id="helpTagBtns"></div>
+      </div>
+      <button class="btn btn-sage" id="postHelpBtn">投稿する</button>
+    </div>
+
+    <div id="helpList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: PROFILE ══ -->
+<div class="tab-panel" id="tab-profile">
+  <div class="section-wrap">
+    <div class="card">
+      <div class="card-title">👤 プロフィール設定</div>
+      <div class="notice">⚠ このサイトはデモ版です。データはこの端末に保存されます。</div>
+      <div class="field">
+        <label class="lbl">ニックネーム</label>
+        <input type="text" id="nickInput" placeholder="山田 太郎 / タロさん…" />
+      </div>
+      <div class="field">
+        <label class="lbl">興味のあること（複数選択OK）</label>
+        <div class="tag-grid" id="profileInterestTags"></div>
+      </div>
+      <div class="field">
+        <label class="lbl">ひとこと自己紹介</label>
+        <textarea id="bioInput" rows="3" placeholder="定年後に始めた趣味や、行きたい場所など…"></textarea>
+      </div>
+      <button class="btn btn-sky" id="saveProfileBtn">💾 保存する</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔢 あなたの会員番号</div>
+      <p style="font-size:1.5rem;font-weight:900;letter-spacing:.15em;color:var(--sky)" id="memberNo">----</p>
+      <p style="font-size:var(--fs-sm);color:#888;margin-top:.4rem;">別の端末から同じ番号で再ログインできます（デモ版では自動保存）。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<!-- ══ Google Maps ══ -->
+<script>
+// ─── State ───────────────────────────────────────────────
+const INTERESTS = ['旅行','食べ歩き','ドライブ','登山・ハイキング','温泉',
+                   '読書','映画','スポーツ観戦','ガーデニング','料理',
+                   'カラオケ','写真','釣り','囲碁・将棋','手芸'];
+const HELP_TAGS = ['車・送迎','スマホ・PC','料理','買い物代行','散歩相手',
+                   '話し相手','草むしり','荷物運び','語学','手芸・裁縫'];
+
+const DEMO_MEMBERS = [
+  {id:'m1',nick:'サクラさん',avatar:'🌸',interests:['旅行','温泉','料理'],bio:''},
+  {id:'m2',nick:'タケオさん',avatar:'⛺',interests:['登山・ハイキング','写真','ドライブ'],bio:''},
+  {id:'m3',nick:'ミチコさん',avatar:'🌺',interests:['食べ歩き','映画','カラオケ'],bio:''},
+  {id:'m4',nick:'ケンジさん',avatar:'🎣',interests:['釣り','ドライブ','スポーツ観戦'],bio:''},
+  {id:'m5',nick:'ユキコさん',avatar:'📚',interests:['読書','手芸','ガーデニング'],bio:''},
+];
+
+// ─── localStorage helpers ──────────────────────────────
+const store = {
+  get:(k,d=[])=>{ try{ return JSON.parse(localStorage.getItem(k))??d; }catch(e){return d;} },
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+};
+
+// ─── Init data ────────────────────────────────────────
+let profile    = store.get('minna_profile', {nick:'',interests:[],bio:''});
+let favorites  = store.get('minna_favs', []);
+let ideas      = store.get('minna_ideas', []);
+let events     = store.get('minna_events', []);
+let helpPosts  = store.get('minna_help', []);
+let memberNo   = store.get('minna_memberNo', '');
+if(!memberNo){ memberNo = ('000'+Math.floor(Math.random()*10000)).slice(-4)+'-'+('000'+Math.floor(Math.random()*10000)).slice(-4); store.set('minna_memberNo',memberNo); }
+
+// ─── Toast ────────────────────────────────────────────
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ─── デバイス自動認識 ─────────────────────────────
+const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+const isTouch  = () => window.matchMedia('(hover: none)').matches;
+
+// ─── Tab nav ─────────────────────────────────────────
+document.querySelectorAll('#mainTabs button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#mainTabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    // スマホはタブ切替時に先頭へ（下部ナビからの移動で迷わないように）
+    if(isMobile()) window.scrollTo({top:0, behavior:'instant'});
+    // 地図タブに戻ったとき、サイズ変化後の地図を再描画
+    if(btn.dataset.tab==='map' && typeof google!=='undefined' && gMap){
+      setTimeout(()=>{ google.maps.event.trigger(gMap,'resize'); if(gMarker) gMap.setCenter(gMarker.getPosition()); },100);
+    }
+  });
+});
+
+// 画面回転・ウィンドウサイズ変更時に地図を追従させる
+let resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{
+    if(typeof google!=='undefined' && gMap){
+      google.maps.event.trigger(gMap,'resize');
+      if(gMarker) gMap.setCenter(gMarker.getPosition());
+    }
+  },200);
+});
+function switchTab(t){
+  document.querySelectorAll('#mainTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  if(isMobile()) window.scrollTo({top:0, behavior:'instant'});
+}
+
+// ─── Map / StreetView ─────────────────────────────────
+let currentPlace = null;
+let gMap=null, gSV=null, gMarker=null, gPano=null;
+
+function initMaps(){
+  // Google Maps API がロードされているか確認
+  if(typeof google==='undefined') return;
+  const mapEl = document.getElementById('map-container');
+  const svEl  = document.getElementById('sv-container');
+  mapEl.innerHTML=''; svEl.innerHTML='';
+
+  gMap = new google.maps.Map(mapEl, { center:{lat:35.6812,lng:139.7671}, zoom:14, disableDefaultUI:false });
+  gSV  = new google.maps.StreetViewService();
+  gPano= new google.maps.StreetViewPanorama(svEl, { addressControl:true, linksControl:true, panControl:true, enableCloseButton:false });
+  gMap.setStreetView(gPano);
+}
+
+function doSearch(){
+  const q = document.getElementById('mapSearch').value.trim();
+  if(!q){ toast('場所を入力してください'); return; }
+  if(typeof google==='undefined'){
+    // API未設定時はリンクで代替
+    const encoded = encodeURIComponent(q);
+    document.getElementById('map-container').innerHTML =
+      `<div style="text-align:center;padding:1rem">
+        <p style="margin-bottom:.8rem">⚠ Google Maps APIキーが設定されていません</p>
+        <a href="https://maps.google.com/?q=${encoded}" target="_blank"
+           style="color:var(--sky);font-weight:700">Google マップで「${q}」を開く →</a><br><br>
+        <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=0,0&query=${encoded}" target="_blank"
+           style="color:var(--sky);font-weight:700">ストリートビューで見る →</a>
+       </div>`;
+    document.getElementById('sv-container').innerHTML =
+      `<div style="text-align:center;padding:1rem">地図・ストリートビューはAPIキー設定後に表示されます</div>`;
+    currentPlace = {name:q};
+    document.getElementById('placeCta').style.display='flex';
+    return;
+  }
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({address:q},(results,status)=>{
+    if(status!=='OK'||!results[0]){ toast('場所が見つかりませんでした'); return; }
+    const loc = results[0].geometry.location;
+    currentPlace = {name:q, lat:loc.lat(), lng:loc.lng()};
+    gMap.setCenter(loc); gMap.setZoom(16);
+    if(gMarker) gMarker.setMap(null);
+    gMarker = new google.maps.Marker({position:loc, map:gMap, title:q});
+    gSV.getPanorama({location:loc,radius:100},(data,sv_status)=>{
+      if(sv_status==='OK'){
+        gPano.setPosition(loc);
+        gPano.setPov({heading:34,pitch:10});
+      } else {
+        document.getElementById('sv-container').innerHTML =
+          '<div style="text-align:center;padding:1rem">⚠ この場所のストリートビューはありません</div>';
+      }
+    });
+    document.getElementById('placeCta').style.display='flex';
+  });
+}
+
+document.getElementById('searchBtn').addEventListener('click', doSearch);
+document.getElementById('mapSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+document.getElementById('showMapBtn').addEventListener('click', doSearch);
+
+// ─── Favorites ───────────────────────────────────────
+function renderFavs(){
+  const el = document.getElementById('favList');
+  if(!favorites.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📭</div>まだお気に入りはありません。<br>場所を検索して追加しましょう！</div>';
+    return;
+  }
+  el.innerHTML = favorites.map((f,i)=>`
+    <div class="fav-item" onclick="loadFav(${i})">
+      <div>
+        <div class="fav-name">📍 ${f.name}</div>
+        <div class="fav-meta">${f.year?f.year+'年頃 • ':''} ${f.memo||''}</div>
+      </div>
+      <div class="fav-actions">
+        <button class="btn btn-amber btn-sm" onclick="event.stopPropagation();favToEvent(${i})">📣 企画へ</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteFav(${i})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('addFavBtn').addEventListener('click',()=>{
+  const name = document.getElementById('mapSearch').value.trim();
+  if(!name){ toast('先に場所を入力してください'); return; }
+  const year = document.getElementById('yearInput').value;
+  const memo = document.getElementById('memoInput').value.trim();
+  if(favorites.some(f=>f.name===name)){ toast('すでに追加済みです'); return; }
+  favorites.push({name,year,memo});
+  store.set('minna_favs',favorites);
+  renderFavs(); toast('♡ お気に入りに追加しました！');
+});
+
+window.loadFav = function(i){
+  const f = favorites[i];
+  document.getElementById('mapSearch').value = f.name;
+  document.getElementById('yearInput').value = f.year||'';
+  document.getElementById('memoInput').value = f.memo||'';
+  doSearch();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+window.deleteFav = function(i){ favorites.splice(i,1); store.set('minna_favs',favorites); renderFavs(); toast('削除しました'); };
+window.favToEvent = function(i){ fillEventFromFav(favorites[i]); };
+
+document.getElementById('clearFavBtn').addEventListener('click',()=>{
+  if(!favorites.length) return;
+  if(confirm('お気に入りをすべて削除しますか？')){ favorites=[]; store.set('minna_favs',favorites); renderFavs(); toast('全削除しました'); }
+});
+
+// ─── Place → Event ───────────────────────────────────
+document.getElementById('placeToEventBtn').addEventListener('click',()=>{
+  if(currentPlace) fillEventFromFav(currentPlace);
+});
+
+function fillEventFromFav(f){
+  switchTab('ideas');
+  document.getElementById('ideaTitle').value = f.name ? `「${f.name}」を一緒に訪れたい` : '';
+  document.getElementById('ideaPlace').value = f.name||'';
+  // select 思い出 category
+  document.querySelectorAll('#catTags .tag-btn').forEach(b=>{
+    b.classList.toggle('selected', b.dataset.cat==='思い出の場所');
+  });
+  toast('💡 アイデア投稿欄に反映しました！');
+}
+
+// ─── Ideas ───────────────────────────────────────────
+let selectedCat = '食事';
+document.querySelectorAll('#catTags .tag-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#catTags .tag-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedCat = btn.dataset.cat;
+  });
+});
+
+function renderIdeas(){
+  const el = document.getElementById('ideasList');
+  if(!ideas.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">💡</div>まだ投稿がありません。最初の「この指！」を出しましょう。</div>';
+    return;
+  }
+  const cats = {'食事':'🍜','屋外':'⛺','運動':'🎾','旅行':'✈️','学び':'📚','趣味':'🎨','ドライブ':'🚗','思い出の場所':'🗺️'};
+  el.innerHTML = ideas.map((idea,i)=>`
+    <div class="idea-card">
+      <div class="ic-header">
+        <div>
+          <span class="badge badge-amber">${cats[idea.cat]||'💡'} ${idea.cat}</span>
+          <div class="ic-title" style="margin-top:.3rem">${idea.title}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteIdea(${i})">🗑</button>
+      </div>
+      <div class="ic-body">${idea.desc||''}</div>
+      <div class="ic-meta">
+        ${idea.place?`📍 ${idea.place}`:''}
+        <span>👍 ${idea.interested||0} 人が興味あり</span>
+        <span>👤 ${idea.author||'あなた'}</span>
+      </div>
+      <div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button class="btn btn-sky btn-sm" onclick="interestIdea(${i})">👍 興味あり！</button>
+        <button class="btn btn-amber btn-sm" onclick="ideaToEvent(${i})">📣 企画にする</button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('postIdeaBtn').addEventListener('click',()=>{
+  const title = document.getElementById('ideaTitle').value.trim();
+  if(!title){ toast('やってみたいことを入力してください'); return; }
+  ideas.unshift({
+    title, cat:selectedCat,
+    desc: document.getElementById('ideaDesc').value.trim(),
+    place: document.getElementById('ideaPlace').value.trim(),
+    author: profile.nick||'あなた', interested:0,
+    ts: Date.now()
+  });
+  store.set('minna_ideas',ideas);
+  document.getElementById('ideaTitle').value='';
+  document.getElementById('ideaDesc').value='';
+  document.getElementById('ideaPlace').value='';
+  renderIdeas(); toast('🎉 投稿しました！仲間を待ちましょう');
+});
+
+window.deleteIdea = function(i){ if(confirm('削除しますか？')){ ideas.splice(i,1); store.set('minna_ideas',ideas); renderIdeas(); } };
+window.interestIdea = function(i){ ideas[i].interested=(ideas[i].interested||0)+1; store.set('minna_ideas',ideas); renderIdeas(); toast('👍 興味ありを押しました！'); };
+window.ideaToEvent = function(i){
+  const idea = ideas[i];
+  switchTab('events');
+  document.getElementById('evTitle').value = idea.title;
+  document.getElementById('evPlace').value = idea.place||'';
+  document.getElementById('evDesc').value  = idea.desc||'';
+  toast('📣 イベント欄に反映しました！日程を入れて公開しましょう');
+};
+
+// ─── Events ──────────────────────────────────────────
+function renderEvents(){
+  const el = document.getElementById('eventsList');
+  if(!events.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📣</div>まだ公開イベントはありません。</div>';
+    return;
+  }
+  el.innerHTML = events.map((ev,i)=>`
+    <div class="idea-card">
+      <div class="ic-header">
+        <div>
+          <span class="badge badge-sky">📣 イベント</span>
+          <div class="ic-title" style="margin-top:.3rem">${ev.title}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteEvent(${i})">🗑</button>
+      </div>
+      <div class="ic-body">${ev.desc||''}</div>
+      <div class="ic-meta">
+        ${ev.date?`📅 ${ev.date}`:''}
+        ${ev.place?`📍 ${ev.place}`:''}
+        <span>✅ ${ev.rsvp||0} 人参加予定</span>
+      </div>
+      <div style="margin-top:.6rem;">
+        <button class="btn btn-sage btn-sm" onclick="rsvpEvent(${i})">✅ 参加する！</button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('postEventBtn').addEventListener('click',()=>{
+  const title = document.getElementById('evTitle').value.trim();
+  if(!title){ toast('イベント名を入力してください'); return; }
+  events.unshift({
+    title, date: document.getElementById('evDate').value.trim(),
+    place: document.getElementById('evPlace').value.trim(),
+    desc: document.getElementById('evDesc').value.trim(),
+    rsvp:0, ts:Date.now()
+  });
+  store.set('minna_events',events);
+  document.getElementById('evTitle').value='';
+  document.getElementById('evDate').value='';
+  document.getElementById('evPlace').value='';
+  document.getElementById('evDesc').value='';
+  renderEvents(); toast('🎉 イベントを公開しました！');
+});
+window.deleteEvent = function(i){ if(confirm('削除しますか？')){ events.splice(i,1); store.set('minna_events',events); renderEvents(); } };
+window.rsvpEvent  = function(i){ events[i].rsvp=(events[i].rsvp||0)+1; store.set('minna_events',events); renderEvents(); toast('✅ 参加表明しました！'); };
+
+// ─── Help board ──────────────────────────────────────
+let helpType = 'need';
+document.getElementById('helpTypeNeed').addEventListener('click',()=>{ helpType='need'; document.getElementById('helpTypeNeed').classList.add('selected'); document.getElementById('helpTypeSkill').classList.remove('selected'); });
+document.getElementById('helpTypeSkill').addEventListener('click',()=>{ helpType='skill'; document.getElementById('helpTypeSkill').classList.add('selected'); document.getElementById('helpTypeNeed').classList.remove('selected'); });
+
+const helpTagEl = document.getElementById('helpTagBtns');
+let selHelpTags = [];
+HELP_TAGS.forEach(t=>{
+  const b=document.createElement('button'); b.className='tag-btn'; b.textContent=t;
+  b.addEventListener('click',()=>{ b.classList.toggle('selected'); selHelpTags = HELP_TAGS.filter((_,i)=>helpTagEl.children[i]?.classList.contains('selected')); });
+  helpTagEl.appendChild(b);
+});
+
+function renderHelp(){
+  const el=document.getElementById('helpList');
+  if(!helpPosts.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🤝</div>まだ投稿がありません。</div>'; return; }
+  el.innerHTML=helpPosts.map((h,i)=>`
+    <div class="help-card ${h.type==='skill'?'skill':''}">
+      <div class="ic-header">
+        <div>
+          <span class="badge ${h.type==='need'?'badge-sky':'badge-sage'}">${h.type==='need'?'🙋 困っていること':'💪 できること'}</span>
+          <div class="hc-title" style="margin-top:.2rem">${h.title}</div>
+          <div class="hc-meta">${h.tags?.join(' • ')||''}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteHelp(${i})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('postHelpBtn').addEventListener('click',()=>{
+  const title=document.getElementById('helpTitle').value.trim();
+  if(!title){ toast('ひとこと入力してください'); return; }
+  helpPosts.unshift({title,type:helpType,tags:[...selHelpTags],ts:Date.now()});
+  store.set('minna_help',helpPosts);
+  document.getElementById('helpTitle').value='';
+  helpTagEl.querySelectorAll('.selected').forEach(b=>b.classList.remove('selected'));
+  selHelpTags=[];
+  renderHelp(); toast('投稿しました！');
+});
+window.deleteHelp = function(i){ helpPosts.splice(i,1); store.set('minna_help',helpPosts); renderHelp(); };
+
+// ─── Connect / Members ───────────────────────────────
+const interestFilterEl = document.getElementById('interestFilterTags');
+let selInterestFilter = [];
+INTERESTS.forEach(t=>{
+  const b=document.createElement('button'); b.className='tag-btn'; b.textContent=t;
+  b.addEventListener('click',()=>{
+    b.classList.toggle('selected');
+    selInterestFilter=INTERESTS.filter((_,i)=>interestFilterEl.children[i]?.classList.contains('selected'));
+    renderMembers();
+  });
+  interestFilterEl.appendChild(b);
+});
+
+function renderMembers(){
+  const el=document.getElementById('membersList');
+  const all=[
+    ...DEMO_MEMBERS,
+    ...(profile.nick?[{id:'me',nick:profile.nick+'（あなた）',avatar:'⭐',interests:profile.interests,bio:profile.bio}]:[])
+  ];
+  const filtered = selInterestFilter.length ? all.filter(m=>m.interests.some(i=>selInterestFilter.includes(i))) : all;
+  if(!filtered.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>一致するメンバーがいません</div>'; return; }
+  el.innerHTML=`<div class="members-grid">${filtered.map(m=>`
+    <div class="member-card">
+      <div class="member-avatar">${m.avatar||'👤'}</div>
+      <div class="member-name">${m.nick}</div>
+      <div class="member-tags">${(m.interests||[]).map(i=>`<span class="badge badge-sky">${i}</span>`).join('')}</div>
+    </div>`).join('')}</div>`;
+}
+
+// ─── Profile ─────────────────────────────────────────
+const profInterestEl=document.getElementById('profileInterestTags');
+INTERESTS.forEach(t=>{
+  const b=document.createElement('button'); b.className='tag-btn'; b.textContent=t;
+  if(profile.interests.includes(t)) b.classList.add('selected');
+  b.addEventListener('click',()=>b.classList.toggle('selected'));
+  profInterestEl.appendChild(b);
+});
+
+function loadProfile(){
+  document.getElementById('nickInput').value = profile.nick||'';
+  document.getElementById('bioInput').value  = profile.bio||'';
+  document.getElementById('memberNo').textContent = memberNo;
+  document.getElementById('headerNick').textContent = profile.nick||'ゲスト';
+}
+
+document.getElementById('saveProfileBtn').addEventListener('click',()=>{
+  profile.nick = document.getElementById('nickInput').value.trim();
+  profile.bio  = document.getElementById('bioInput').value.trim();
+  profile.interests = INTERESTS.filter((_,i)=>profInterestEl.children[i]?.classList.contains('selected'));
+  store.set('minna_profile',profile);
+  document.getElementById('headerNick').textContent = profile.nick||'ゲスト';
+  renderMembers(); toast('💾 プロフィールを保存しました！');
+});
+
+document.getElementById('profileBtn').addEventListener('click',()=>switchTab('profile'));
+
+// ─── Boot ─────────────────────────────────────────────
+loadProfile();
+renderFavs();
+renderIdeas();
+renderEvents();
+renderHelp();
+renderMembers();
+
+// Google Maps callback
+window.initMapsCallback = function(){ initMaps(); };
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   🗝 Google Maps APIキー設定（サイト運営者が1回だけ設定）
+   ═══════════════════════════════════════════════════════════
+   ここにAPIキーを記入して公開してOKです。ただし、必ず
+   Google Cloud Console 側で以下の2つの制限をかけてください。
+   制限済みのキーは、コピーされても他人のサイトでは動きません
+  （Google公式推奨の「公開可能キー」の運用方法です）。
+
+   ── 設定手順（5分）───────────────────────────────
+   1. https://console.cloud.google.com/apis/credentials を開く
+   2. 「＋認証情報を作成」→「APIキー」
+   3. 作成したキーの編集画面で：
+      ◆ アプリケーションの制限
+        →「HTTPリファラー（ウェブサイト）」を選び、
+          https://kenken6291.github.io/*  を追加
+          （kenken6291.github.io 配下の全リポジトリで使えます）
+      ◆ APIの制限
+        →「キーを制限」を選び、
+          Maps JavaScript API のみチェック
+          （Places検索を使う場合は Places API も）
+   4. 下の GMAPS_API_KEY に貼り付けて保存・公開
+   5. （推奨）Cloud Console「お支払い」→ 予算アラートを設定
+   ──────────────────────────────────────────── */
+const GMAPS_API_KEY = "AIzaSyDEjc0R4DUyiePnrXQq7B0Z_kc9yNJglAg";   // ← ここにキーを貼り付け（例: "AIzaSy..."）
+
+// ─── Maps loader ─────────────────────────────────────
+(function(){
+  if(!GMAPS_API_KEY){
+    // キー未設定時はフォールバックモード（Googleマップへのリンクで代替）
+    console.info('GMAPS_API_KEY 未設定：リンクモードで動作します');
+    return;
+  }
+  const s = document.createElement('script');
+  s.src = 'https://maps.googleapis.com/maps/api/js?key='
+        + encodeURIComponent(GMAPS_API_KEY)
+        + '&callback=initMapsCallback&libraries=places&language=ja';
+  s.async = true; s.defer = true;
+  s.onerror = function(){
+    document.getElementById('map-container').innerHTML =
+      '<div style="text-align:center;padding:1rem;color:#c00">'
+      + '⚠ 地図の読み込みに失敗しました。<br>'
+      + 'APIキーのリファラー制限がこのサイトのURLと一致しているか確認してください。</div>';
+  };
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>
