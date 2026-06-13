@@ -919,54 +919,67 @@ document.getElementById('svUrlApplyBtn').addEventListener('click', async ()=>{
   const iframeSrc = v.match(/src=["']([^"']+)["']/);
   if(iframeSrc) v = iframeSrc[1];
 
-  // ② すでに埋め込みURL形式（embed）→ そのまま使用
+  // ② すでに埋め込みURL（/maps/embed）→ そのまま表示
   if(/google\.[^/]+\/maps\/embed/.test(v)){
     applySvUrl(v); return;
   }
 
-  // ③ maps.app.goo.gl の短縮URL → 場所情報を取り出して埋め込みURLを構築
+  // ③ maps.app.goo.gl 短縮URL → GASプロキシで実URLを展開
   if(/maps\.app\.goo\.gl\//.test(v)){
-    toast('🔗 URLを解析中…');
-    // 短縮URLは直接fetchできないため、座標や場所名が取れない場合は
-    // Googleマップの「地図を埋め込む」URLへの変換を試みる
-    // ── 方式A: URLパターンから place query を構築
-    // maps.app.goo.gl は場所ピンのURLなのでplaceフォールバックを使う
-    const embedBase = 'https://www.google.com/maps/embed/v1/place';
-    if(GMAPS_API_KEY){
-      // APIキーあり → Maps Embed API (place mode) で直接表示
-      // 短縮URLからは座標が取れないため、入力欄に場所名があれば使う
-      const placeName = document.getElementById('memPlace').value.trim()
-                     || document.getElementById('mapSearch').value.trim();
-      if(placeName){
-        const embedUrl = embedBase + '?key=' + encodeURIComponent(GMAPS_API_KEY)
-          + '&q=' + encodeURIComponent(placeName) + '&maptype=satellite&zoom=18';
-        applySvUrl(embedUrl);
-        toast('🗺️ 場所「'+placeName+'」の地図を表示します');
+    toast('🔗 URLを解析中…'); setApplyBtnLoading(true);
+    try{
+      const expanded = await expandShortUrl(v);
+      if(expanded){
+        v = expanded;
+        // 展開後のURLで座標抽出に続く（④へ fall-through）
+      } else {
+        // 展開失敗 → リンク表示
+        applyMapLink(v, 'Googleマップで開く');
         return;
       }
-    }
-    // APIキーなし or 場所名なし → リンクとして表示するフォールバック
-    applyMapLink(v, '地図アプリで開く');
-    return;
+    } finally { setApplyBtnLoading(false); }
   }
 
-  // ④ google.com/maps/... の通常URL（@lat,lng,... 形式など）
+  // ④ 展開済みの google.com/maps URL から座標を抽出してSVを表示
   if(/google\.[^/]+\/maps/.test(v)){
-    // 座標を抽出して Street View embed に変換を試みる
-    const coord = v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if(coord && GMAPS_API_KEY){
-      const embedUrl = 'https://www.google.com/maps/embed/v1/streetview'
+    // パターンA: @lat,lng（ストリートビュー・マップ共通）
+    const coordA = v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    // パターンB: !2d経度!3d緯度 (pb=パラメータ内)
+    const coordB = v.match(/!3d(-?\d+\.\d+).*?!2d(-?\d+\.\d+)/);
+    // パターンC: q=lat,lng
+    const coordC = v.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+
+    let lat, lng;
+    if(coordA){ lat=coordA[1]; lng=coordA[2]; }
+    else if(coordB){ lat=coordB[1]; lng=coordB[2]; }
+    else if(coordC){ lat=coordC[1]; lng=coordC[2]; }
+
+    if(lat && lng){
+      if(GMAPS_API_KEY){
+        // Maps Embed API StreetView モード（最高品質）
+        const svEmbed = 'https://www.google.com/maps/embed/v1/streetview'
+          + '?key=' + encodeURIComponent(GMAPS_API_KEY)
+          + '&location=' + lat + ',' + lng + '&fov=90&heading=0&pitch=0';
+        applySvUrl(svEmbed); return;
+      } else {
+        // APIキーなし → 標準埋め込みURLを構築（制限ありだが表示可）
+        const fallback = 'https://maps.google.com/maps?q='
+          + lat + ',' + lng + '&output=embed&hl=ja';
+        applySvUrl(fallback); return;
+      }
+    }
+
+    // 座標が取れなかった場合 → 場所名で検索
+    const placeQ = v.match(/\/maps\/(?:place|search)\/([^/@?]+)/);
+    if(placeQ && GMAPS_API_KEY){
+      const place = decodeURIComponent(placeQ[1].replace(/\+/g,' '));
+      const placeEmbed = 'https://www.google.com/maps/embed/v1/place'
         + '?key=' + encodeURIComponent(GMAPS_API_KEY)
-        + '&location=' + coord[1] + ',' + coord[2];
-      applySvUrl(embedUrl); return;
+        + '&q=' + encodeURIComponent(place) + '&zoom=18';
+      applySvUrl(placeEmbed); return;
     }
-    if(coord){
-      // APIキーなし → 座標ありの標準リンクとして表示
-      const previewUrl = 'https://www.google.com/maps/embed?pb=!1m0!3m2!1sja!2sjp!4v0!6m8!1m7!1s0!2m2!1d'
-        + coord[2] + '!2d' + coord[1] + '!3f0!4f0!5f0.7820865974627469';
-      applySvUrl(previewUrl); return;
-    }
-    // 座標なし → リンクフォールバック
+
+    // 最終フォールバック：リンク表示
     applyMapLink(v, 'Googleマップで開く');
     return;
   }
@@ -974,10 +987,31 @@ document.getElementById('svUrlApplyBtn').addEventListener('click', async ()=>{
   toast('⚠ Googleマップ以外のURLは使用できません');
 });
 
+// GASプロキシで短縮URLを展開
+async function expandShortUrl(shortUrl){
+  if(!GAS_API_URL){
+    // GAS未設定時：座標が取れないのでnullを返す
+    toast('⚠ GAS_API_URL未設定のため短縮URLを展開できません。\niframeの埋め込みコードをお試しください');
+    return null;
+  }
+  try{
+    const res = await fetch(GAS_API_URL + '?action=expandUrl&url=' + encodeURIComponent(shortUrl));
+    const data = await res.json();
+    if(data.ok && data.expandedUrl) return data.expandedUrl;
+  } catch(e){ /* 通信エラーは無視してnull返却 */ }
+  return null;
+}
+
+function setApplyBtnLoading(on){
+  const btn = document.getElementById('svUrlApplyBtn');
+  btn.disabled = on;
+  btn.textContent = on ? '解析中…' : '反映する';
+}
+
 function applySvUrl(url){
   nowSvUrl = url; nowImgSrc = null;
   const nowDrop = document.getElementById('nowDrop');
-  nowDrop.innerHTML = '<div style="text-align:center;padding:.5rem;font-size:.85rem;color:var(--sage)">✅ ストリートビュー／地図を設定しました<br><span style="font-size:.72rem;color:#888">くらべ方をえらぶ欄で確認できます</span></div>';
+  nowDrop.innerHTML = '<div style="text-align:center;padding:.5rem;font-size:.85rem;color:var(--sage)">✅ 地図・ストリートビューを設定しました<br><span style="font-size:.72rem;color:#888">「くらべ方をえらぶ」欄で確認できます</span></div>';
   renderCompare();
   toast('🔭 地図を反映しました');
 }
@@ -986,10 +1020,11 @@ function applyMapLink(url, label){
   nowSvUrl = null; nowImgSrc = null;
   const nowDrop = document.getElementById('nowDrop');
   nowDrop.innerHTML = '<div style="text-align:center;padding:1rem">'
-    + '<a href="' + esc(url) + '" target="_blank" style="color:var(--sky);font-weight:700">🗺️ ' + label + ' →</a><br>'
+    + '<a href="' + esc(url) + '" target="_blank" style="color:var(--sky);font-weight:700">🗺️ ' + esc(label) + ' →</a><br>'
     + '<span style="font-size:.78rem;color:#888;margin-top:.4rem;display:block">'
-    + 'このURLは直接埋め込めません。<br>地図アプリ→「共有」→「地図を埋め込む」のコードをお試しください</span></div>';
-  toast('⚠ このURLは埋め込み不可のため、リンクとして表示します');
+    + 'このURLは直接埋め込めません。<br>'
+    + 'Googleマップ → 共有 →「地図を埋め込む」の<br>iframeコードを貼り付けてください</span></div>';
+  toast('⚠ このURLは埋め込み不可のためリンクとして表示します');
 }
 
 function setCmpMode(m){

@@ -76,7 +76,32 @@ function json(o){
 }
 
 // ─── エントリポイント ─────────────────────────
-function doGet(){ return json({ok:true, service:'minna-aso'}); }
+// ─── GETリクエスト：短縮URL展開（CORS対応） ───────────
+// ブラウザからは maps.app.goo.gl へ直接 fetch できないため
+// GASをプロキシとして実URLを取得する
+function doGet(e){
+  const action = e && e.parameter && e.parameter.action;
+  if(action === 'expandUrl'){
+    const url = e.parameter.url || '';
+    // maps.app.goo.gl のみ許可（セキュリティ制限）
+    if(!/^https:\/\/maps\.app\.goo\.gl\//.test(url)){
+      return json({ok:false, error:'許可されていないURLです'});
+    }
+    try{
+      // GASからフェッチするとリダイレクトが自動解決される
+      const res = UrlFetchApp.fetch(url, {followRedirects:true, muteHttpExceptions:true});
+      const finalUrl = res.getHeaders()['Location'] || res.getUrl() || url;
+      // レスポンスHTMLから正規URLを取り出す
+      const html = res.getContentText();
+      const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)
+                     || html.match(/,"(https:\/\/www\.google\.com\/maps[^"]+)"/);
+      return json({ok:true, expandedUrl: canonical ? canonical[1] : finalUrl});
+    }catch(err){
+      return json({ok:false, error:String(err)});
+    }
+  }
+  return json({ok:true, service:'minna-aso'});
+}
 
 function doPost(e){
   let req;
