@@ -353,10 +353,16 @@
       <div class="card">
         <div class="card-title"><span class="step-no">2</span>現在の風景を用意する</div>
         <div class="field">
-          <label class="lbl">A. ストリートビューの「共有URL」または「埋め込みコード」を貼り付け</label>
-          <input type="text" id="svUrlInput" placeholder="https://www.google.com/maps/embed?... または <iframe ...>">
+          <label class="lbl">A. ストリートビューの共有URLまたは埋め込みコードを貼り付け</label>
+          <input type="text" id="svUrlInput" placeholder="https://maps.app.goo.gl/... または https://maps.google.com/... または &lt;iframe ...&gt;">
           <button class="btn btn-sky btn-sm" style="margin-top:.5rem" id="svUrlApplyBtn">反映する</button>
-          <p style="font-size:.78rem;color:#888;margin-top:.4rem">※ Googleマップのストリートビュー画面 → 共有 → 「地図を埋め込む」のコードをコピー</p>
+          <div style="font-size:.78rem;color:#888;margin-top:.5rem;line-height:1.7">
+            ✅ <b>そのまま貼れるURL：</b><br>
+            &nbsp;・ <code>https://maps.app.goo.gl/XXXX</code>（アプリの「共有」ボタンのURL）<br>
+            &nbsp;・ <code>https://www.google.com/maps/...</code>（ブラウザのURL欄）<br>
+            &nbsp;・ <code>&lt;iframe src="https://www.google.com/maps/embed?..."&gt;</code>（埋め込みコード）<br>
+            💡 <b>より確実な方法：</b>Googleマップ → 共有 →「地図を埋め込む」のiframeコードを貼り付け
+          </div>
         </div>
         <div class="field">
           <label class="lbl">B. または現在の写真をアップロード</label>
@@ -561,18 +567,18 @@
    ═══════════════════════════════════════════════ */
 // ① GASウェブアプリのURL（code.gs をデプロイして取得）
 //    空のままでも「端末内デモモード」で動作します
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz9S1JH-8w-hVoTZPUVb89-0kQqdtVlir-QOK_6Ouv9kOmZOVH1s7jZACisPLZ_gbO2/exec";   // 例: "https://script.google.com/macros/s/XXXX/exec"
+const GAS_API_URL = "";   // 例: "https://script.google.com/macros/s/XXXX/exec"
 
 // ② Google Maps APIキー
 //    Google Cloud Console で必ず以下を設定：
 //    ・HTTPリファラー制限: https://kenken6291.github.io/*
 //    ・API制限: Maps JavaScript API / Places API のみ
-const GMAPS_API_KEY = "AIzaSyDEjc0R4DUyiePnrXQq7B0Z_kc9yNJglAg";
+const GMAPS_API_KEY = "";
 
 // 管理者番号はサーバー（GAS）側でのみ判定します。
 // このファイルには管理者番号を書かないでください（ソースは誰でも見られます）。
 // 下のDEMO_ADMIN_NOは GAS未設定のデモモード専用です（端末内データにのみ有効）。
-const DEMO_ADMIN_NO = '19916291';
+const DEMO_ADMIN_NO = '19626291';
 const INTERESTS = ['旅行','食べ歩き','ドライブ','登山・ハイキング','温泉','読書','映画',
   'スポーツ観戦','ガーデニング','料理','カラオケ','写真','釣り','囲碁・将棋','手芸'];
 const HELP_TAGS = ['車・送迎','スマホ・PC','料理','買い物代行','散歩相手','話し相手',
@@ -905,17 +911,86 @@ function setupDrop(dropId, fileId, msgId, onLoad){
 setupDrop('oldDrop','oldFile','oldDropMsg', src=>{ oldImgSrc=src; });
 setupDrop('nowDrop','nowFile','nowDropMsg', src=>{ nowImgSrc=src; nowSvUrl=null; });
 
-document.getElementById('svUrlApplyBtn').addEventListener('click',()=>{
-  let v=document.getElementById('svUrlInput').value.trim();
+document.getElementById('svUrlApplyBtn').addEventListener('click', async ()=>{
+  let v = document.getElementById('svUrlInput').value.trim();
   if(!v){ toast('URLか埋め込みコードを貼り付けてください'); return; }
-  const m=v.match(/src=["']([^"']+)["']/);
-  if(m) v=m[1];
-  if(!/^https:\/\/(www\.)?google\.[^\/]+\/maps/.test(v)){
-    toast('⚠ Googleマップの埋め込みURLではないようです'); return; }
-  nowSvUrl=v; nowImgSrc=null;
-  toast('🔭 ストリートビューを反映しました');
-  renderCompare();
+
+  // ① <iframe src="..."> 埋め込みコードから src を抽出
+  const iframeSrc = v.match(/src=["']([^"']+)["']/);
+  if(iframeSrc) v = iframeSrc[1];
+
+  // ② すでに埋め込みURL形式（embed）→ そのまま使用
+  if(/google\.[^/]+\/maps\/embed/.test(v)){
+    applySvUrl(v); return;
+  }
+
+  // ③ maps.app.goo.gl の短縮URL → 場所情報を取り出して埋め込みURLを構築
+  if(/maps\.app\.goo\.gl\//.test(v)){
+    toast('🔗 URLを解析中…');
+    // 短縮URLは直接fetchできないため、座標や場所名が取れない場合は
+    // Googleマップの「地図を埋め込む」URLへの変換を試みる
+    // ── 方式A: URLパターンから place query を構築
+    // maps.app.goo.gl は場所ピンのURLなのでplaceフォールバックを使う
+    const embedBase = 'https://www.google.com/maps/embed/v1/place';
+    if(GMAPS_API_KEY){
+      // APIキーあり → Maps Embed API (place mode) で直接表示
+      // 短縮URLからは座標が取れないため、入力欄に場所名があれば使う
+      const placeName = document.getElementById('memPlace').value.trim()
+                     || document.getElementById('mapSearch').value.trim();
+      if(placeName){
+        const embedUrl = embedBase + '?key=' + encodeURIComponent(GMAPS_API_KEY)
+          + '&q=' + encodeURIComponent(placeName) + '&maptype=satellite&zoom=18';
+        applySvUrl(embedUrl);
+        toast('🗺️ 場所「'+placeName+'」の地図を表示します');
+        return;
+      }
+    }
+    // APIキーなし or 場所名なし → リンクとして表示するフォールバック
+    applyMapLink(v, '地図アプリで開く');
+    return;
+  }
+
+  // ④ google.com/maps/... の通常URL（@lat,lng,... 形式など）
+  if(/google\.[^/]+\/maps/.test(v)){
+    // 座標を抽出して Street View embed に変換を試みる
+    const coord = v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if(coord && GMAPS_API_KEY){
+      const embedUrl = 'https://www.google.com/maps/embed/v1/streetview'
+        + '?key=' + encodeURIComponent(GMAPS_API_KEY)
+        + '&location=' + coord[1] + ',' + coord[2];
+      applySvUrl(embedUrl); return;
+    }
+    if(coord){
+      // APIキーなし → 座標ありの標準リンクとして表示
+      const previewUrl = 'https://www.google.com/maps/embed?pb=!1m0!3m2!1sja!2sjp!4v0!6m8!1m7!1s0!2m2!1d'
+        + coord[2] + '!2d' + coord[1] + '!3f0!4f0!5f0.7820865974627469';
+      applySvUrl(previewUrl); return;
+    }
+    // 座標なし → リンクフォールバック
+    applyMapLink(v, 'Googleマップで開く');
+    return;
+  }
+
+  toast('⚠ Googleマップ以外のURLは使用できません');
 });
+
+function applySvUrl(url){
+  nowSvUrl = url; nowImgSrc = null;
+  const nowDrop = document.getElementById('nowDrop');
+  nowDrop.innerHTML = '<div style="text-align:center;padding:.5rem;font-size:.85rem;color:var(--sage)">✅ ストリートビュー／地図を設定しました<br><span style="font-size:.72rem;color:#888">くらべ方をえらぶ欄で確認できます</span></div>';
+  renderCompare();
+  toast('🔭 地図を反映しました');
+}
+
+function applyMapLink(url, label){
+  nowSvUrl = null; nowImgSrc = null;
+  const nowDrop = document.getElementById('nowDrop');
+  nowDrop.innerHTML = '<div style="text-align:center;padding:1rem">'
+    + '<a href="' + esc(url) + '" target="_blank" style="color:var(--sky);font-weight:700">🗺️ ' + label + ' →</a><br>'
+    + '<span style="font-size:.78rem;color:#888;margin-top:.4rem;display:block">'
+    + 'このURLは直接埋め込めません。<br>地図アプリ→「共有」→「地図を埋め込む」のコードをお試しください</span></div>';
+  toast('⚠ このURLは埋め込み不可のため、リンクとして表示します');
+}
 
 function setCmpMode(m){
   cmpMode=m;
