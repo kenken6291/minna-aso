@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>みんあそくん ― 思い出の場所から、今の仲間へ</title>
+<style>
+  :root {
+    --sky:#4A90C8; --sky-lt:#D6EAFA; --amber:#E8873A; --amber-lt:#FDF0E3;
+    --sage:#5A8A6A; --sage-lt:#E2F0E6; --ink:#2B2B2B; --mist:#F5F7FA;
+    --white:#FFF; --border:#D4DCE5; --r:12px;
+    --shadow:0 2px 12px rgba(0,0,0,.08);
+    --fs-lg:1.25rem; --fs-md:1.05rem; --fs-sm:.9rem;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:18px;scroll-behavior:smooth}
+  body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:var(--mist);color:var(--ink);line-height:1.7}
+
+  header{background:linear-gradient(135deg,var(--sky) 0%,#2E6FAA 100%);color:#fff;padding:0 1.5rem;
+    display:flex;align-items:center;justify-content:space-between;height:64px;
+    position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .logo{font-size:1.3rem;font-weight:800;display:flex;align-items:center;gap:.4rem}
+  .logo span.tag{font-size:.65rem;background:var(--amber);color:#fff;padding:1px 6px;border-radius:20px;font-weight:700}
+
+  nav.tabs{background:var(--white);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;gap:0;
+    position:sticky;top:64px;z-index:90;scrollbar-width:none}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:0 0 auto;padding:.8rem 1.1rem;border:none;background:transparent;cursor:pointer;
+    font-size:var(--fs-sm);font-weight:600;color:#777;border-bottom:3px solid transparent;transition:.2s;
+    white-space:nowrap;font-family:inherit}
+  nav.tabs button.active{color:var(--sky);border-bottom-color:var(--sky)}
+  nav.tabs button:hover{color:var(--sky);background:var(--sky-lt)}
+  @media (max-width:768px){
+    nav.tabs{position:fixed;top:auto;bottom:0;left:0;right:0;border-bottom:none;border-top:1.5px solid var(--border);
+      box-shadow:0 -2px 12px rgba(0,0,0,.10);justify-content:space-around;
+      padding-bottom:env(safe-area-inset-bottom);z-index:200}
+    nav.tabs button{flex:1 1 0;padding:.45rem .15rem .55rem;display:flex;flex-direction:column;align-items:center;gap:1px;
+      border-bottom:none;border-top:3px solid transparent;min-height:56px}
+    nav.tabs button .nav-ico{font-size:1.3rem;line-height:1.2}
+    nav.tabs button .nav-label{font-size:.58rem;font-weight:700}
+    nav.tabs button.active{border-top-color:var(--sky);background:var(--sky-lt)}
+    body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  }
+
+  .tab-panel{display:none}
+  .tab-panel.active{display:block}
+  .section-wrap{max-width:860px;margin:0 auto;padding:1.5rem 1rem 4rem}
+
+  .card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:1.4rem 1.5rem;margin-bottom:1.2rem}
+  .card-title{font-size:var(--fs-lg);font-weight:800;margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem}
+
+  input[type=text],input[type=number],input[type=url],input[type=password],textarea,select{
+    width:100%;padding:.75rem 1rem;font-size:var(--fs-md);border:1.5px solid var(--border);
+    border-radius:8px;background:var(--mist);outline:none;transition:.2s;font-family:inherit}
+  input:focus,textarea:focus{border-color:var(--sky);background:#fff;box-shadow:0 0 0 3px rgba(74,144,200,.15)}
+  label.lbl{font-size:var(--fs-sm);font-weight:700;color:#555;display:block;margin-bottom:.35rem}
+  .field{margin-bottom:1rem}
+
+  .pw-wrap{position:relative}
+  .pw-wrap input[type=password],.pw-wrap input[type=text]{padding-right:2.8rem}
+  .pw-toggle{position:absolute;right:.4rem;top:50%;transform:translateY(-50%);background:transparent;
+    border:none;cursor:pointer;font-size:1.15rem;line-height:1;padding:.4rem .5rem;color:#888;
+    display:flex;align-items:center;justify-content:center}
+  .pw-toggle:hover{color:var(--sky)}
+
+  .btn{display:inline-flex;align-items:center;gap:.4rem;padding:.7rem 1.4rem;border:none;border-radius:8px;
+    font-size:var(--fs-md);font-weight:700;cursor:pointer;transition:.18s;font-family:inherit}
+  .btn-sky{background:var(--sky);color:#fff}.btn-sky:hover{background:#3578b0}
+  .btn-amber{background:var(--amber);color:#fff}.btn-amber:hover{background:#c96e22}
+  .btn-sage{background:var(--sage);color:#fff}.btn-sage:hover{background:#477056}
+  .btn-ghost{background:transparent;border:1.5px solid var(--border);color:#555}.btn-ghost:hover{background:var(--mist)}
+  .btn-danger{background:#e05555;color:#fff}.btn-danger:hover{background:#c43e3e}
+  .btn-sm{padding:.45rem .9rem;font-size:var(--fs-sm)}
+
+  .hero{background:linear-gradient(135deg,#2E6FAA 0%,#5A8A6A 100%);color:#fff;border-radius:var(--r);
+    padding:2rem 1.5rem 1.8rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+  .hero::after{content:'🗺️🎪';font-size:5rem;position:absolute;right:-1rem;top:50%;transform:translateY(-50%);
+    opacity:.15;pointer-events:none;line-height:1}
+  .hero h1{font-size:1.5rem;font-weight:900;margin-bottom:.5rem}
+  .hero p{font-size:var(--fs-sm);opacity:.9;max-width:520px}
+
+  .map-sv-grid{display:grid;grid-template-columns:1fr;gap:1rem}
+  #map-container,#sv-container{width:100%;height:280px;border-radius:10px;overflow:hidden;
+    border:1.5px solid var(--border);background:#e8f0f8;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:var(--fs-sm)}
+  #sv-container{background:#f0f4f8;height:300px}
+  @media(min-width:769px){.map-sv-grid{grid-template-columns:1fr 1fr}#map-container,#sv-container{height:420px}}
+  @media(min-width:1200px){#map-container,#sv-container{height:500px}}
+
+  .fav-item{background:var(--sky-lt);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;
+    justify-content:space-between;gap:.5rem;cursor:pointer;transition:.15s;margin-bottom:.7rem}
+  .fav-item:hover{background:#c4dff5}
+  .fav-item .fav-name{font-weight:700;font-size:var(--fs-md)}
+  .fav-item .fav-meta{font-size:var(--fs-sm);color:#666}
+  .fav-actions{display:flex;gap:.4rem;flex-shrink:0}
+
+  .idea-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:.8rem}
+  .ic-header{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem}
+  .ic-title{font-size:var(--fs-md);font-weight:800}
+  .ic-body{font-size:var(--fs-sm);color:#555;margin-top:.3rem}
+  .ic-meta{font-size:var(--fs-sm);color:#888;margin-top:.5rem;display:flex;gap:1rem;flex-wrap:wrap}
+  .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700}
+  .badge-sky{background:var(--sky-lt);color:var(--sky)}
+  .badge-amber{background:var(--amber-lt);color:var(--amber)}
+  .badge-sage{background:var(--sage-lt);color:var(--sage)}
+
+  .tag-grid{display:flex;flex-wrap:wrap;gap:.5rem}
+  .tag-btn{padding:.5rem 1rem;border-radius:20px;font-size:var(--fs-sm);font-weight:700;
+    border:2px solid var(--border);background:var(--white);cursor:pointer;transition:.15s;font-family:inherit}
+  .tag-btn.selected{border-color:var(--sky);background:var(--sky-lt);color:var(--sky)}
+
+  .members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.8rem}
+  .member-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center}
+  .member-avatar{width:52px;height:52px;border-radius:50%;background:var(--sky);color:#fff;font-size:1.3rem;
+    display:flex;align-items:center;justify-content:center;margin:0 auto .5rem}
+  .member-name{font-weight:800;font-size:var(--fs-sm)}
+  .member-tags{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:.4rem}
+
+  #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(2rem);
+    background:#1a1a2e;color:#fff;padding:.7rem 1.5rem;border-radius:30px;font-size:var(--fs-sm);
+    font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .place-cta{background:linear-gradient(135deg,var(--amber-lt),#fff7ee);border:2px solid var(--amber);
+    border-radius:10px;padding:1rem 1.2rem;margin-top:1rem;display:flex;align-items:center;
+    justify-content:space-between;gap:.8rem;flex-wrap:wrap}
+  .place-cta p{font-size:var(--fs-sm);font-weight:700;color:#a05800}
+
+  .empty{text-align:center;padding:2.5rem 1rem;color:#aaa;font-size:var(--fs-sm)}
+  .empty .empty-icon{font-size:2.5rem;margin-bottom:.5rem}
+  .notice{background:#fffbe6;border:1.5px solid #f5d45a;border-radius:8px;padding:.7rem 1rem;
+    font-size:var(--fs-sm);color:#7a5f00;margin-bottom:1rem}
+
+  .help-card{border-left:4px solid var(--sky);background:var(--white);border-radius:0 10px 10px 0;
+    padding:.9rem 1rem;margin-bottom:.7rem}
+  .help-card.skill{border-left-color:var(--sage)}
+  .hc-title{font-weight:800;font-size:var(--fs-md)}
+  .hc-meta{font-size:var(--fs-sm);color:#777;margin-top:.25rem}
+
+  /* ── 認証画面 ── */
+  #authOverlay{position:fixed;inset:0;background:linear-gradient(135deg,#2E6FAA,#5A8A6A);
+    z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
+  .auth-card{background:#fff;border-radius:16px;max-width:480px;width:100%;padding:2rem 1.6rem;
+    box-shadow:0 8px 40px rgba(0,0,0,.3);margin:auto}
+  .auth-logo{text-align:center;font-size:1.6rem;font-weight:900;margin-bottom:.3rem}
+  .auth-sub{text-align:center;font-size:var(--fs-sm);color:#777;margin-bottom:1.5rem}
+  .auth-view{display:none}.auth-view.active{display:block}
+  .num-display{font-size:2.2rem;font-weight:900;letter-spacing:.18em;color:var(--sky);
+    text-align:center;background:var(--sky-lt);border-radius:12px;padding:1rem;margin:1rem 0}
+
+  /* ── 管理者パネル ── */
+  .admin-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+  .admin-table th,.admin-table td{padding:.55rem .6rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  .admin-table th{background:var(--mist);font-weight:700;white-space:nowrap}
+  .admin-table tr.checked{background:#fdecec}
+  .admin-table input[type=checkbox]{width:19px;height:19px}
+  .admin-section{overflow-x:auto}
+
+  /* ── 思い出くらべ ── */
+  .sub-tabs{display:flex;gap:.5rem;margin-bottom:1.2rem}
+  .sub-tabs button{flex:1;padding:.7rem;border-radius:10px;border:2px solid var(--border);
+    background:#fff;font-size:var(--fs-sm);font-weight:800;cursor:pointer;font-family:inherit;color:#777}
+  .sub-tabs button.active{border-color:var(--sky);background:var(--sky-lt);color:var(--sky)}
+  .step-no{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--sky);color:#fff;
+    align-items:center;justify-content:center;font-size:.85rem;font-weight:800;margin-right:.4rem}
+  .photo-drop{border:2px dashed var(--border);border-radius:10px;padding:1.6rem 1rem;text-align:center;
+    color:#888;font-size:var(--fs-sm);cursor:pointer;transition:.2s}
+  .photo-drop:hover,.photo-drop.drag{border-color:var(--sky);background:var(--sky-lt);color:var(--sky)}
+  .photo-drop img{max-width:100%;max-height:180px;border-radius:8px}
+  .cmp-mode-btns{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+  .cmp-stage{position:relative;width:100%;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);
+    background:#222;min-height:240px}
+  .cmp-stage .layer{position:absolute;inset:0;width:100%;height:100%}
+  .cmp-stage img.layer{object-fit:contain;background:#222}
+  .cmp-stage iframe.layer{border:none}
+  .cmp-side{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .cmp-side > div{border-radius:10px;overflow:hidden;border:1.5px solid var(--border);background:#222;min-height:200px;position:relative}
+  .cmp-side img{width:100%;height:100%;object-fit:contain;display:block}
+  .cmp-side iframe{width:100%;height:100%;border:none;position:absolute;inset:0}
+  .cmp-label{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.65);color:#fff;
+    font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:14px;z-index:5}
+  .slider-row{display:flex;align-items:center;gap:.7rem;margin-top:.8rem;font-size:var(--fs-sm);color:#666}
+  .slider-row input[type=range]{flex:1;height:34px}
+  @media(min-width:769px){.cmp-stage{height:460px}.cmp-side>div{height:380px}}
+  @media(max-width:768px){.cmp-stage{height:300px}.cmp-side{grid-template-columns:1fr}.cmp-side>div{height:240px}}
+
+  /* ── 全体レスポンシブ ── */
+  @media(min-width:769px){
+    .section-wrap{max-width:1100px;padding:2rem 2rem 4rem}
+    #ideasList,#eventsList,#helpList,#memoriesList{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;align-items:start}
+    #ideasList .empty,#eventsList .empty,#helpList .empty,#memoriesList .empty{grid-column:1/-1}
+    .idea-card,.help-card{margin-bottom:0}
+    .members-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+    .hero{padding:2.5rem 2.5rem 2.2rem}.hero h1{font-size:1.8rem}.hero p{max-width:640px;font-size:1rem}
+  }
+  @media(max-width:600px){
+    html{font-size:16px}
+    header{height:56px;padding:0 1rem}
+    .logo{font-size:1.05rem}.logo span.tag{display:none}
+    .hero{padding:1.4rem 1.2rem 1.3rem}.hero h1{font-size:1.2rem}.hero::after{font-size:3.2rem}
+    .card{padding:1.1rem 1rem}
+    .btn{min-height:44px}.tag-btn{min-height:42px;padding:.5rem .9rem}
+    .fav-item{flex-direction:column;align-items:stretch}.fav-actions{justify-content:flex-end}
+    .place-cta{flex-direction:column;align-items:stretch;text-align:center}
+    .place-cta .btn{justify-content:center}
+    #toast{bottom:calc(84px + env(safe-area-inset-bottom));max-width:92vw;white-space:normal;text-align:center}
+  }
+  @media(hover:none){
+    nav.tabs button:hover{background:transparent}
+    .btn:active{transform:scale(.97)}.tag-btn:active{transform:scale(.95)}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ 認証画面 ══ -->
+<div id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-logo">🎪 みんあそくん</div>
+    <div class="auth-sub">思い出の場所から、今の仲間へ</div>
+
+    <!-- 選択 -->
+    <div class="auth-view active" id="authChoice">
+      <button class="btn btn-sky" style="width:100%;justify-content:center;margin-bottom:.8rem" onclick="authShow('authRegister')">🆕 はじめての方（会員登録）</button>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="authShow('authLogin')">🔑 ログイン</button>
+      <p style="font-size:.78rem;color:#aaa;margin-top:1.2rem;text-align:center">ログインにはメールアドレスを使用します。<br>本サービスは無料のボランティア運営です。</p>
+    </div>
+
+    <!-- 登録 -->
+    <div class="auth-view" id="authRegister">
+      <div class="field">
+        <label class="lbl">メールアドレス（ログインIDになります）</label>
+        <input type="text" id="regEmail" placeholder="taro@example.com" inputmode="email" autocomplete="email">
+      </div>
+      <div class="field">
+        <label class="lbl">氏名</label>
+        <input type="text" id="regFullName" placeholder="山田 太郎" maxlength="40" autocomplete="name">
+        <p style="font-size:.75rem;color:#999;margin-top:.3rem">本人確認用です。サイト上には表示されません。</p>
+      </div>
+      <div class="field">
+        <label class="lbl">ニックネーム（サイト上での表示名）</label>
+        <input type="text" id="regNick" placeholder="タロさん、ハナコ など" maxlength="20">
+      </div>
+      <div class="field">
+        <label class="lbl">興味のあること（あとで変更できます）</label>
+        <div class="tag-grid" id="regInterestTags"></div>
+      </div>
+      <button class="btn btn-sky" style="width:100%;justify-content:center" id="regSubmitBtn">登録する（仮パスワードをメール送信）</button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:.6rem" onclick="authShow('authChoice')">← 戻る</button>
+    </div>
+
+    <!-- 登録完了 -->
+    <div class="auth-view" id="authIssued">
+      <p style="text-align:center;font-weight:800;font-size:var(--fs-lg)">🎉 登録完了！</p>
+      <div class="notice">ご登録のメールアドレス宛に<strong>仮パスワード</strong>をお送りしました。メールをご確認のうえ、ログインしてください。</div>
+      <div id="demoTempPasswordBox" style="display:none" class="num-display"></div>
+      <button class="btn btn-sky" style="width:100%;justify-content:center" onclick="authShow('authLogin')">ログイン画面へ →</button>
+    </div>
+
+    <!-- ログイン -->
+    <div class="auth-view" id="authLogin">
+      <div class="field">
+        <label class="lbl">メールアドレス</label>
+        <input type="text" id="loginEmail" inputmode="email" autocomplete="email" placeholder="taro@example.com">
+      </div>
+      <div class="field">
+        <label class="lbl">パスワード</label>
+        <div class="pw-wrap">
+          <input type="password" id="loginPassword" autocomplete="current-password" placeholder="仮パスワードまたは設定したパスワード">
+          <button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)" aria-label="パスワードを表示">👁</button>
+        </div>
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:.5rem;font-size:var(--fs-sm);margin:1rem 0;color:#555">
+        <input type="checkbox" id="loginAgreeCheckbox" style="margin-top:.2rem;width:18px;height:18px;flex-shrink:0">
+        <span><a href="#" onclick="document.getElementById('termsModal').style.display='flex';return false;">注意事項・免責事項</a>に同意します</span>
+      </label>
+      <button class="btn btn-sky" style="width:100%;justify-content:center" id="loginSubmitBtn">ログイン</button>
+      <p style="text-align:center;margin-top:.8rem">
+        <a href="#" style="font-size:var(--fs-sm);color:var(--sky)" onclick="authShow('authForgotPassword');return false;">パスワードをお忘れですか？</a>
+      </p>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:.6rem" onclick="authShow('authChoice')">← 戻る</button>
+    </div>
+
+    <!-- パスワード再発行 -->
+    <div class="auth-view" id="authForgotPassword">
+      <p style="text-align:center;font-weight:800;font-size:var(--fs-lg)">🔑 パスワードの再発行</p>
+      <p style="font-size:var(--fs-sm);color:#666;text-align:center;margin:.5rem 0 1.2rem">登録済みのメールアドレスを入力してください。<br>新しい仮パスワードをメールでお送りします。</p>
+      <div class="field">
+        <label class="lbl">登録メールアドレス</label>
+        <input type="text" id="forgotEmail" inputmode="email" autocomplete="email" placeholder="taro@example.com">
+      </div>
+      <button class="btn btn-sky" style="width:100%;justify-content:center" id="forgotSubmitBtn">仮パスワードを再発行する</button>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:.6rem" onclick="authShow('authLogin')">← ログイン画面に戻る</button>
+    </div>
+
+    <!-- パスワード再発行 完了 -->
+    <div class="auth-view" id="authForgotDone">
+      <p style="text-align:center;font-weight:800;font-size:var(--fs-lg)">📩 送信しました</p>
+      <div class="notice">ご入力のメールアドレスが登録済みであれば、新しい仮パスワードをお送りしました。メールをご確認のうえ、その仮パスワードでログインしてください。<br><br>しばらく待ってもメールが届かない場合は、迷惑メールフォルダもご確認ください。</div>
+      <div id="demoResetPasswordBox" style="display:none" class="num-display"></div>
+      <button class="btn btn-sky" style="width:100%;justify-content:center" onclick="authShow('authLogin')">ログイン画面へ →</button>
+    </div>
+
+    <!-- 初回／再設定パスワード変更 -->
+    <div class="auth-view" id="authChangePassword">
+      <p style="text-align:center;font-weight:800;font-size:var(--fs-lg)">🔑 パスワードの変更</p>
+      <div class="notice">初回ログイン、またはパスワード再発行後のため、新しいパスワードの設定が必要です。</div>
+      <div class="field">
+        <label class="lbl">新しいパスワード（8文字以上）</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPassword1" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPassword1',this)" aria-label="パスワードを表示">👁</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">新しいパスワード（確認）</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPassword2" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPassword2',this)" aria-label="パスワードを表示">👁</button>
+        </div>
+      </div>
+      <button class="btn btn-sky" style="width:100%;justify-content:center" id="changePasswordSubmitBtn">パスワードを設定してはじめる →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 注意事項・免責事項モーダル ══ -->
+<div id="termsModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:1rem;">
+  <div class="modal-content" style="background:#fff;border-radius:16px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;padding:1.6rem;">
+    <h2 style="font-size:1.2rem;font-weight:900;margin-bottom:1rem">注意事項・免責事項</h2>
+
+    <h3 style="font-weight:800;margin-top:1rem">1. 本サービスについて</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">「みんあそくん」（以下「本サービス」）は、運営者が無償・ボランティアで提供する個人運営のコミュニティサービスです。営利を目的としたものではなく、商用サービスと同等の可用性・保守体制を保証するものではありません。</p>
+
+    <h3 style="font-weight:800;margin-top:1rem">2. 会員間トラブルについて</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">本サービスを通じて会員同士が実際に会う、連絡を取り合う、イベントを企画・参加する等の交流を行う場合、その内容・実施・結果について生じたトラブル（金銭トラブル、事故、ハラスメント、その他一切の紛争を含みます）は、<strong>会員間（当事者間）で解決していただくもの</strong>とし、運営者は当該トラブルに関与せず、また一切の責任を負いません。会員は、実際に会う相手・場所・時間等について、自己の責任において安全確認を行ってください。</p>
+
+    <h3 style="font-weight:800;margin-top:1rem">3. 免責事項</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">運営者は、本サービスの内容の正確性・完全性・有用性、および本サービスが中断・停止・終了しないことについて、いかなる保証も行いません。天災、通信障害、外部サービス（Google等）の仕様変更・停止、その他運営者の合理的な管理を超える事由により生じた損害について、運営者は責任を負いません。</p>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">運営者は、本サービスの利用により会員に生じた損害について、<strong>運営者の故意または重大な過失による場合を除き</strong>、賠償の責任を負いません。</p>
+
+    <h3 style="font-weight:800;margin-top:1rem">4. サービスの変更・停止・終了</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">運営者は、会員への事前告知の有無にかかわらず、本サービスの内容を変更し、または提供を停止・終了することができるものとします。</p>
+
+    <h3 style="font-weight:800;margin-top:1rem">5. 禁止事項</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">法令または公序良俗に違反する行為、他の会員・第三者の権利を侵害する行為、なりすまし、勧誘・営業・宗教・政治活動等の目的外利用を禁止します。違反時、運営者は事前通知なく利用を制限・停止できます。</p>
+
+    <h3 style="font-weight:800;margin-top:1rem">6. 個人情報の取扱い</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">登録いただいたメールアドレス・氏名は、ログイン認証・本人確認・運営上必要な連絡のためにのみ使用し、法令に基づく場合を除き第三者に提供しません。サイト上の表示名はニックネームのみとし、氏名は表示されません。</p>
+
+    <h3 style="font-weight:800;margin-top:1rem">7. 準拠法・管轄</h3>
+    <p style="font-size:var(--fs-sm);margin-top:.4rem">本規約は日本法に準拠し、本サービスに関連して生じた紛争については、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。</p>
+
+    <div style="margin-top:1.2rem;text-align:right">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('termsModal').style.display='none'">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">🎪 みんあそくん <span class="tag">思い出 × 仲間</span></div>
+  <button class="btn btn-ghost btn-sm" id="profileBtn" style="color:#fff;border-color:rgba(255,255,255,.4)">
+    👤 <span id="headerNick">ゲスト</span>
+  </button>
+</header>
+
+<!-- ══ TAB NAV ══ -->
+<nav class="tabs" id="mainTabs">
+  <button class="active" data-tab="map"><span class="nav-ico">🗺️</span> <span class="nav-label">場所と思い出</span></button>
+  <button data-tab="connect"><span class="nav-ico">🤝</span> <span class="nav-label">仲間</span></button>
+  <button data-tab="ideas"><span class="nav-ico">💡</span> <span class="nav-label">やってみよう</span></button>
+  <button data-tab="events"><span class="nav-ico">📣</span> <span class="nav-label">イベント</span></button>
+  <button data-tab="help"><span class="nav-ico">🙋</span> <span class="nav-label">助け合い</span></button>
+  <button data-tab="profile"><span class="nav-ico">👤</span> <span class="nav-label">プロフィール</span></button>
+  <button data-tab="admin" id="adminTabBtn" style="display:none"><span class="nav-ico">🛡</span> <span class="nav-label">管理者</span></button>
+</nav>
+
+<!-- ══ TAB: 場所と思い出 ══ -->
+<div class="tab-panel active" id="tab-map">
+  <div class="section-wrap">
+    <div class="sub-tabs">
+      <button class="active" data-sub="now" onclick="switchSub('now')">🗺️ あの場所の今</button>
+      <button data-sub="compare" onclick="switchSub('compare')">📷 思い出くらべ</button>
+      <button data-sub="memories" onclick="switchSub('memories')">📖 みんなの思い出</button>
+    </div>
+
+    <!-- ── サブ: あの場所の今 ── -->
+    <div class="sub-view" id="sub-now">
+      <div class="hero">
+        <h1>🗺️ あの場所の今を見に行こう</h1>
+        <p>昔住んでいた場所、母校、思い出の街角を検索して、ストリートビューで今の姿を確認できます。</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📍 場所を検索</div>
+        <div class="field">
+          <label class="lbl">住所・施設名・キーワード</label>
+          <div style="display:flex;gap:.5rem">
+            <input type="text" id="mapSearch" placeholder="例：渋谷区道玄坂、〇〇小学校…">
+            <button class="btn btn-sky" id="searchBtn">🔍</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <div class="field" style="flex:1;min-width:120px">
+            <label class="lbl">当時の西暦（任意）</label>
+            <input type="number" id="yearInput" placeholder="1985" min="1900" max="2026">
+          </div>
+          <div class="field" style="flex:2;min-width:180px">
+            <label class="lbl">思い出メモ（任意）</label>
+            <input type="text" id="memoInput" placeholder="修学旅行で来た場所…">
+          </div>
+        </div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btn-ghost" id="addFavBtn">♡ お気に入りに追加</button>
+        </div>
+      </div>
+
+      <div class="map-sv-grid">
+        <div id="map-container">📌 住所を入力して検索してください</div>
+        <div id="sv-container">🔭 検索するとストリートビューが表示されます</div>
+      </div>
+
+      <div class="place-cta" id="placeCta" style="display:none">
+        <p>📣 この場所、何かしませんか？</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-amber btn-sm" id="placeToEventBtn">💡 イベント企画へ</button>
+          <button class="btn btn-sky btn-sm" id="placeToCompareBtn">📷 昔と今をくらべる</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.2rem">
+        <div class="card-title" style="justify-content:space-between">
+          <span>💛 お気に入りリスト <span style="font-size:.72rem;color:#aaa;font-weight:400">（この端末に保存）</span></span>
+          <button class="btn btn-ghost btn-sm" id="clearFavBtn">🗑 全削除</button>
+        </div>
+        <div id="favList"></div>
+      </div>
+    </div>
+
+    <!-- ── サブ: 思い出くらべ ── -->
+    <div class="sub-view" id="sub-compare" style="display:none">
+      <div class="hero" style="background:linear-gradient(135deg,#6a5a8a,#2E6FAA)">
+        <h1>📷 思い出くらべ</h1>
+        <p>昔の写真と現在の風景を重ねて、街の移り変わりを楽しみましょう。写真はこの端末内だけで処理され、サーバーには送信されません。</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="step-no">1</span>昔の写真をえらぶ</div>
+        <div class="photo-drop" id="oldDrop">
+          <span id="oldDropMsg">📁 タップして昔の写真を選ぶ<br><span style="font-size:.78rem">（パソコンならここにドラッグ＆ドロップでもOK）</span></span>
+        </div>
+        <input type="file" id="oldFile" accept="image/*" style="display:none">
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="step-no">2</span>現在の風景を用意する</div>
+        <div class="field">
+          <label class="lbl">A. ストリートビューの共有URLまたは埋め込みコードを貼り付け</label>
+          <input type="text" id="svUrlInput" placeholder="https://maps.app.goo.gl/... または https://maps.google.com/... または &lt;iframe ...&gt;">
+          <button class="btn btn-sky btn-sm" style="margin-top:.5rem" id="svUrlApplyBtn">反映する</button>
+          <div style="font-size:.78rem;color:#888;margin-top:.5rem;line-height:1.7">
+            ✅ <b>そのまま貼れるURL：</b><br>
+            &nbsp;・ <code>https://maps.app.goo.gl/XXXX</code>（アプリの「共有」ボタンのURL）<br>
+            &nbsp;・ <code>https://www.google.com/maps/...</code>（ブラウザのURL欄）<br>
+            &nbsp;・ <code>&lt;iframe src="https://www.google.com/maps/embed?..."&gt;</code>（埋め込みコード）<br>
+            💡 <b>より確実な方法：</b>Googleマップ → 共有 →「地図を埋め込む」のiframeコードを貼り付け
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">B. または現在の写真をアップロード</label>
+          <div class="photo-drop" id="nowDrop">
+            <span id="nowDropMsg">📁 タップして現在の写真を選ぶ</span>
+          </div>
+          <input type="file" id="nowFile" accept="image/*" style="display:none">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="step-no">3</span>くらべ方をえらぶ</div>
+        <div class="cmp-mode-btns">
+          <button class="tag-btn selected" data-mode="side" onclick="setCmpMode('side')">🔲 並べて比較</button>
+          <button class="tag-btn" data-mode="slider" onclick="setCmpMode('slider')">↔️ スライダー比較</button>
+          <button class="tag-btn" data-mode="opacity" onclick="setCmpMode('opacity')">🌗 透過度比較</button>
+        </div>
+        <div id="cmpArea"><div class="empty"><div class="empty-icon">🖼</div>手順1・2の写真を用意すると、ここに比較画面が表示されます</div></div>
+        <div class="slider-row" id="cmpSliderRow" style="display:none">
+          <span id="cmpSliderLeft">← 昔だけ</span>
+          <input type="range" id="cmpSlider" min="0" max="100" value="50">
+          <span id="cmpSliderRight">今だけ →</span>
+        </div>
+      </div>
+
+      <div class="card" style="border:2px solid var(--sage)">
+        <div class="card-title">📖 この思い出をみんなに残す</div>
+        <p style="font-size:var(--fs-sm);color:#666;margin-bottom:.8rem">写真は共有されません。場所と言葉だけが「みんなの思い出」に投稿されます。</p>
+        <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+          <div class="field" style="flex:2;min-width:160px">
+            <label class="lbl">場所</label>
+            <input type="text" id="memPlace" placeholder="〇〇駅前、△△商店街…">
+          </div>
+          <div class="field" style="flex:1;min-width:110px">
+            <label class="lbl">年代</label>
+            <input type="text" id="memEra" placeholder="昭和40年頃">
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">思い出のひとこと</label>
+          <textarea id="memComment" rows="3" placeholder="この駅前には市場があって、夕方は買い物客でいっぱいだった…"></textarea>
+        </div>
+        <button class="btn btn-sage" id="postMemoryBtn">📖 思い出を投稿する</button>
+      </div>
+    </div>
+
+    <!-- ── サブ: みんなの思い出 ── -->
+    <div class="sub-view" id="sub-memories" style="display:none">
+      <div class="hero" style="background:linear-gradient(135deg,#5A8A6A,#6a5a8a)">
+        <h1>📖 みんなの思い出</h1>
+        <p>会員のみなさんが残した街の記憶。「ここを一緒に歩きたい」と思ったらイベント企画へ。</p>
+      </div>
+      <div id="memoriesList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: 仲間 ══ -->
+<div class="tab-panel" id="tab-connect">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#5A8A6A,#2E6FAA)">
+      <h1>🤝 興味でつながる</h1>
+      <p>共通の趣味・関心を持つ会員を見つけましょう。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏷 興味でしぼり込む</div>
+      <div class="tag-grid" id="interestFilterTags"></div>
+    </div>
+    <div id="membersList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: やってみよう ══ -->
+<div class="tab-panel" id="tab-ideas">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#E8873A,#c96e22)">
+      <h1>💡 やってみようボード</h1>
+      <p>「これ面白そう！」を投稿して仲間を集めましょう。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✏️ 新しいアイデアを投稿</div>
+      <div class="field">
+        <label class="lbl">カテゴリー</label>
+        <div class="tag-grid" id="catTags">
+          <button class="tag-btn selected" data-cat="食事">🍜 食事</button>
+          <button class="tag-btn" data-cat="屋外">⛺ 屋外</button>
+          <button class="tag-btn" data-cat="運動">🎾 運動</button>
+          <button class="tag-btn" data-cat="旅行">✈️ 旅行</button>
+          <button class="tag-btn" data-cat="学び">📚 学び</button>
+          <button class="tag-btn" data-cat="趣味">🎨 趣味</button>
+          <button class="tag-btn" data-cat="ドライブ">🚗 ドライブ</button>
+          <button class="tag-btn" data-cat="思い出の場所">🗺️ 思い出の場所</button>
+        </div>
+      </div>
+      <div class="field"><label class="lbl">やってみたいこと</label>
+        <input type="text" id="ideaTitle" placeholder="昔の通学路を一緒に歩いてみたい…"></div>
+      <div class="field"><label class="lbl">ひとこと説明</label>
+        <textarea id="ideaDesc" rows="3" placeholder="詳しく教えてください…"></textarea></div>
+      <div class="field"><label class="lbl">場所（任意）</label>
+        <input type="text" id="ideaPlace" placeholder="渋谷・新宿 など"></div>
+      <button class="btn btn-amber" id="postIdeaBtn">この指とまれ！で投稿</button>
+    </div>
+    <div id="ideasList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: イベント ══ -->
+<div class="tab-panel" id="tab-events">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#2E6FAA,#E8873A)">
+      <h1>📣 公開イベント</h1>
+      <p>参加表明して一緒に楽しみましょう！</p>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ イベントを公開する</div>
+      <div class="field"><label class="lbl">イベント名</label>
+        <input type="text" id="evTitle" placeholder="〇〇公園でお花見"></div>
+      <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:130px"><label class="lbl">日程</label>
+          <input type="text" id="evDate" placeholder="6月29日（土）"></div>
+        <div class="field" style="flex:1;min-width:130px"><label class="lbl">場所</label>
+          <input type="text" id="evPlace" placeholder="代々木公園"></div>
+      </div>
+      <div class="field"><label class="lbl">詳細・集合場所など</label>
+        <textarea id="evDesc" rows="2" placeholder="詳細を入力…"></textarea></div>
+      <button class="btn btn-sky" id="postEventBtn">📣 公開する</button>
+    </div>
+    <div id="eventsList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: 助け合い ══ -->
+<div class="tab-panel" id="tab-help">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#5A8A6A,#3a7a5a)">
+      <h1>🙋 助け合い掲示板</h1>
+      <p>「困っていること」と「できること」をつなぎます。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✏️ 投稿する</div>
+      <div class="field">
+        <label class="lbl">種類</label>
+        <div style="display:flex;gap:.6rem">
+          <button class="tag-btn selected" id="helpTypeNeed" data-type="need">🙋 困っていること</button>
+          <button class="tag-btn" id="helpTypeSkill" data-type="skill">💪 できること</button>
+        </div>
+      </div>
+      <div class="field"><label class="lbl">ひとこと</label>
+        <input type="text" id="helpTitle" placeholder="スマホの操作を教えてほしい / 運転ならお任せ…"></div>
+      <div class="field"><label class="lbl">タグ（複数OK）</label>
+        <div class="tag-grid" id="helpTagBtns"></div></div>
+      <button class="btn btn-sage" id="postHelpBtn">投稿する</button>
+    </div>
+    <div id="helpList"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: プロフィール ══ -->
+<div class="tab-panel" id="tab-profile">
+  <div class="section-wrap">
+    <div class="card">
+      <div class="card-title">📧 ログイン情報</div>
+      <p style="font-size:1.05rem;font-weight:800;color:var(--sky)" id="profileEmailDisp">--</p>
+      <p style="font-size:var(--fs-sm);color:#888;margin-top:.4rem">ログインID（メールアドレス）です。他の端末からもこのメールアドレスとパスワードでログインできます。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 プロフィール設定</div>
+      <div class="field"><label class="lbl">ニックネーム</label>
+        <input type="text" id="nickInput" maxlength="20"></div>
+      <div class="field"><label class="lbl">興味のあること（複数選択OK）</label>
+        <div class="tag-grid" id="profileInterestTags"></div></div>
+      <div class="field"><label class="lbl">ひとこと自己紹介</label>
+        <textarea id="bioInput" rows="3" placeholder="定年後に始めた趣味や、行きたい場所など…"></textarea></div>
+      <button class="btn btn-sky" id="saveProfileBtn">💾 保存する</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 パスワード変更</div>
+      <div class="field"><label class="lbl">現在のパスワード</label>
+        <div class="pw-wrap">
+          <input type="password" id="curPwInput" autocomplete="current-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('curPwInput',this)" aria-label="パスワードを表示">👁</button>
+        </div>
+      </div>
+      <div class="field"><label class="lbl">新しいパスワード（8文字以上）</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPwInput1" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPwInput1',this)" aria-label="パスワードを表示">👁</button>
+        </div>
+      </div>
+      <div class="field"><label class="lbl">新しいパスワード（確認）</label>
+        <div class="pw-wrap">
+          <input type="password" id="newPwInput2" autocomplete="new-password">
+          <button type="button" class="pw-toggle" onclick="togglePw('newPwInput2',this)" aria-label="パスワードを表示">👁</button>
+        </div>
+      </div>
+      <button class="btn btn-sky" id="changePwProfileBtn">パスワードを変更する</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🚪 ログアウト</div>
+      <p style="font-size:var(--fs-sm);color:#888;margin-bottom:.8rem">この端末からログアウトします。再ログインにはメールアドレスとパスワードが必要です。</p>
+      <button class="btn btn-ghost" id="logoutBtn">ログアウトする</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: 管理者 ══ -->
+<div class="tab-panel" id="tab-admin">
+  <div class="section-wrap">
+    <div class="hero" style="background:linear-gradient(135deg,#8a3a3a,#2E6FAA)">
+      <h1>🛡 管理者パネル</h1>
+      <p>会員・投稿をチェックボックスで複数選択して一括削除、✏️で個別編集ができます。データはスプレッドシートにも反映されます。</p>
+    </div>
+    <div style="margin-bottom:1rem">
+      <button class="btn btn-sky btn-sm" id="adminReloadBtn">🔄 最新データを再読み込み</button>
+    </div>
+    <div id="adminPanels"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+/* ═══════════════════════════════════════════════
+   設定（運営者が編集する場所はこの2つだけ）
+   ═══════════════════════════════════════════════ */
+// ① GASウェブアプリのURL（code.gs をデプロイして取得）
+//    空のままでも「端末内デモモード」で動作します
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz9S1JH-8w-hVoTZPUVb89-0kQqdtVlir-QOK_6Ouv9kOmZOVH1s7jZACisPLZ_gbO2/exec";   // 例: "https://script.google.com/macros/s/XXXX/exec"
+
+// ② Google Maps APIキー
+//    Google Cloud Console で必ず以下を設定：
+//    ・HTTPリファラー制限: https://kenken6291.github.io/*
+//    ・API制限: Maps JavaScript API / Places API のみ
+const GMAPS_API_KEY = "AIzaSyDEjc0R4DUyiePnrXQq7B0Z_kc9yNJglAg";
+
+// 管理者メールアドレスはサーバー（GAS）側スクリプトプロパティ ADMIN_EMAIL でのみ判定します。
+// このファイルには管理者情報を書かないでください（ソースは誰でも見られます）。
+const INTERESTS = ['旅行','食べ歩き','ドライブ','登山・ハイキング','温泉','読書','映画',
+  'スポーツ観戦','ガーデニング','料理','カラオケ','写真','釣り','囲碁・将棋','手芸'];
+const HELP_TAGS = ['車・送迎','スマホ・PC','料理','買い物代行','散歩相手','話し相手',
+  '草むしり','荷物運び','語学','手芸・裁縫'];
+
+/* ─── 状態 ─── */
+let session = { token:'', uid:'', email:'', nick:'', interests:[], bio:'', isAdmin:false };
+let DB = { members:[], ideas:[], events:[], help:[], memories:[] };
+let favorites = lsGet('minna_favs', []);
+let pendingLoginEmail = ''; // 初回パスワード変更中に保持する登録メール
+
+function lsGet(k,d){ try{ return JSON.parse(localStorage.getItem(k))??d; }catch(e){ return d; } }
+function lsSet(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ═══ API層：GAS or 端末内デモ ═══ */
+async function api(action, payload={}){
+  if(!GAS_API_URL) return localApi(action, payload);
+  try{
+    const res = await fetch(GAS_API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},  // preflight回避
+      body: JSON.stringify({action, ...payload})
+    });
+    return await res.json();
+  }catch(err){
+    return {ok:false, error:'通信エラー：'+err.message};
+  }
+}
+
+/* デモモード（GAS未設定時）：localStorageで同じAPIを再現。
+   本番相当のメール＋仮パスワード方式を再現するが、実メール送信はできないため
+   仮パスワードを画面に直接表示する（デモ専用の代替）。 */
+const DEMO_ADMIN_EMAIL = 'admin@example.com';
+function localApi(action, p){
+  const db = lsGet('minna_demo_db', {members:[],ideas:[],events:[],help:[],memories:[],sessions:[]});
+  const save = ()=>lsSet('minna_demo_db', db);
+  const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const find = (arr,id)=>arr.findIndex(x=>x.id===id);
+  const norm = e => String(e||'').trim().toLowerCase();
+  const resolveToken = t => { const s = db.sessions.find(x=>x.token===t); return s ? db.members.find(m=>m.email===s.email) : null; };
+
+  switch(action){
+    case 'register': {
+      const email = norm(p.email);
+      if(db.members.some(m=>m.email===email)) return {ok:false,error:'EMAIL_ALREADY_REGISTERED'};
+      const tempPw = Math.random().toString(36).slice(2,10);
+      db.members.push({uid:uid(), email, pw:tempPw, mustChange:true, nick:p.nickname||'', fullName:p.fullName||'',
+        interests:p.interests||[], bio:'', created:new Date().toISOString()});
+      save();
+      document.getElementById('demoTempPasswordBox').style.display='';
+      document.getElementById('demoTempPasswordBox').textContent = '仮パスワード: '+tempPw;
+      return {ok:true};
+    }
+    case 'login': {
+      if(!p.agreedTerms) return {ok:false,error:'TERMS_NOT_AGREED'};
+      const email = norm(p.email);
+      const m = db.members.find(x=>x.email===email);
+      if(!m || m.pw!==p.password) return {ok:false,error:'INVALID_CREDENTIALS'};
+      if(m.mustChange) return {ok:true, mustChangePassword:true, email};
+      const token = uid(); db.sessions.push({token, email}); save();
+      return {ok:true, mustChangePassword:false, token, uid:m.uid, email:m.email, nick:m.nick, interests:m.interests, bio:m.bio, isAdmin: email===DEMO_ADMIN_EMAIL};
+    }
+    case 'changePassword': {
+      const email = norm(p.email);
+      const m = db.members.find(x=>x.email===email);
+      if(!m || (m.pw!==p.currentPassword)) return {ok:false,error:'INVALID_CREDENTIALS'};
+      if((p.newPassword||'').length<8) return {ok:false,error:'PASSWORD_TOO_SHORT'};
+      m.pw = p.newPassword; m.mustChange=false; save();
+      const token = uid(); db.sessions.push({token, email}); save();
+      return {ok:true, token, uid:m.uid, email:m.email, nick:m.nick, interests:m.interests, bio:m.bio, isAdmin: email===DEMO_ADMIN_EMAIL};
+    }
+    case 'checkSession': {
+      const m = resolveToken(p.token);
+      if(!m) return {ok:false,error:'INVALID_SESSION'};
+      return {ok:true, token:p.token, uid:m.uid, email:m.email, nick:m.nick, interests:m.interests, bio:m.bio, isAdmin: m.email===DEMO_ADMIN_EMAIL};
+    }
+    case 'forgotPassword': {
+      const email = norm(p.email);
+      const m = db.members.find(x=>x.email===email);
+      if(m){
+        const tempPw = Math.random().toString(36).slice(2,10);
+        m.pw = tempPw; m.mustChange = true;
+        db.sessions = db.sessions.filter(s=>s.email!==email); // 全セッション無効化
+        save();
+        document.getElementById('demoResetPasswordBox').style.display='';
+        document.getElementById('demoResetPasswordBox').textContent = '（デモ）新しい仮パスワード: '+tempPw;
+      }
+      return {ok:true}; // 登録有無にかかわらず同じ結果を返す
+    }
+    case 'logout': {
+      db.sessions = db.sessions.filter(s=>s.token!==p.token); save(); return {ok:true};
+    }
+    case 'updateProfile': {
+      const m = resolveToken(p.token); if(!m) return {ok:false,error:'INVALID_SESSION'};
+      m.nick=p.nick||''; m.interests=p.interests||[]; m.bio=p.bio||''; save(); return {ok:true};
+    }
+    case 'listAll': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      const admin = me.email===DEMO_ADMIN_EMAIL;
+      const mask = u => admin ? u : '*****'+String(u).slice(-3);
+      const strip = x => { const o={...x, mine:x.uid===me.uid}; if(!admin) delete o.uid; return o; };
+      return {ok:true, isAdmin:admin,
+        members: db.members.map(m=>({uid:mask(m.uid), nick:m.nick, interests:m.interests, isMe:m.uid===me.uid,
+          ...(admin?{email:m.email,bio:m.bio,created:m.created}:{})})),
+        ideas: db.ideas.map(strip), events: db.events.map(strip),
+        help: db.help.map(strip), memories: db.memories.map(strip)};
+    }
+    case 'addIdea': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      db.ideas.unshift({id:uid(),uid:me.uid,nick:me.nick,title:p.title,cat:p.cat,desc:p.desc,place:p.place,interested:0,created:new Date().toISOString()});
+      save(); return {ok:true};
+    }
+    case 'addEvent': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      db.events.unshift({id:uid(),uid:me.uid,nick:me.nick,title:p.title,date:p.date,place:p.place,desc:p.desc,rsvp:0,created:new Date().toISOString()});
+      save(); return {ok:true};
+    }
+    case 'addHelp': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      db.help.unshift({id:uid(),uid:me.uid,nick:me.nick,type:p.type,title:p.title,tags:p.tags||[],created:new Date().toISOString()});
+      save(); return {ok:true};
+    }
+    case 'addMemory': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      db.memories.unshift({id:uid(),uid:me.uid,nick:me.nick,place:p.place,era:p.era,comment:p.comment,created:new Date().toISOString()});
+      save(); return {ok:true};
+    }
+    case 'bump': {
+      const arr = p.type==='ideas'?db.ideas:db.events;
+      const it = arr.find(x=>x.id===p.id); if(!it) return {ok:false};
+      if(p.type==='ideas') it.interested=(it.interested||0)+1; else it.rsvp=(it.rsvp||0)+1;
+      save(); return {ok:true};
+    }
+    case 'deleteItem': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      const admin = me.email===DEMO_ADMIN_EMAIL;
+      const arr = db[p.type]; const i = find(arr,p.id);
+      if(i<0) return {ok:false,error:'not found'};
+      if(!admin && arr[i].uid!==me.uid) return {ok:false,error:'自分の投稿のみ削除できます'};
+      arr.splice(i,1); save(); return {ok:true};
+    }
+    case 'editItem': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      const admin = me.email===DEMO_ADMIN_EMAIL;
+      const arr = db[p.type]; const i = find(arr,p.id);
+      if(i<0) return {ok:false,error:'not found'};
+      if(!admin && arr[i].uid!==me.uid) return {ok:false,error:'自分の投稿のみ編集できます'};
+      Object.assign(arr[i], p.fields||{}); save(); return {ok:true};
+    }
+    case 'adminDelete': {
+      const me = resolveToken(p.token); if(!me) return {ok:false,error:'INVALID_SESSION'};
+      if(me.email!==DEMO_ADMIN_EMAIL) return {ok:false,error:'管理者権限がありません'};
+      const ids = (p.ids||[]).map(String);
+      if(p.type==='members') db.members = db.members.filter(m=>!ids.includes(m.uid)||m.email===DEMO_ADMIN_EMAIL);
+      else db[p.type] = db[p.type].filter(x=>!ids.includes(String(x.id)));
+      save(); return {ok:true, deleted:ids.length};
+    }
+  }
+  return {ok:false,error:'unknown'};
+}
+
+/* ═══ パスワード表示／非表示切替 ═══ */
+function togglePw(inputId, btn){
+  const el = document.getElementById(inputId);
+  const willShow = el.type === 'password';
+  el.type = willShow ? 'text' : 'password';
+  btn.textContent = willShow ? '🙈' : '👁';
+  btn.setAttribute('aria-label', willShow ? 'パスワードを隠す' : 'パスワードを表示');
+}
+
+/* ═══ 認証 ═══ */
+function authShow(id){
+  document.querySelectorAll('.auth-view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function applySessionToUi(){
+  document.getElementById('headerNick').textContent = session.nick||'会員';
+  document.getElementById('profileEmailDisp').textContent = session.email||'--';
+  document.getElementById('nickInput').value = session.nick||'';
+  document.getElementById('bioInput').value = session.bio||'';
+}
+function enterApp(){
+  document.getElementById('authOverlay').style.display='none';
+  applySessionToUi();
+  buildProfileTags();
+  if(session.isAdmin){ document.getElementById('adminTabBtn').style.display=''; }
+  refreshData();
+}
+
+document.getElementById('regSubmitBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('regEmail').value.trim();
+  const fullName = document.getElementById('regFullName').value.trim();
+  const nick = document.getElementById('regNick').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('メールアドレスの形式が正しくありません'); return; }
+  if(!fullName){ toast('氏名を入力してください'); return; }
+  if(!nick){ toast('ニックネームを入力してください'); return; }
+  const interests = [...document.querySelectorAll('#regInterestTags .selected')].map(b=>b.textContent);
+  toast('登録中…');
+  const r = await api('register', {email, fullName, nickname:nick, interests});
+  if(!r.ok){ toast('⚠ '+describeAuthError(r.error)); return; }
+  authShow('authIssued');
+});
+
+document.getElementById('loginSubmitBtn').addEventListener('click', doLogin);
+document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const agreed = document.getElementById('loginAgreeCheckbox').checked;
+  if(!email || !password){ toast('メールアドレスとパスワードを入力してください'); return; }
+  if(!agreed){ toast('注意事項・免責事項への同意が必要です'); return; }
+  toast('確認中…');
+  const r = await api('login', {email, password, agreedTerms:agreed});
+  if(!r.ok){ toast('⚠ '+describeAuthError(r.error)); return; }
+  if(r.mustChangePassword){
+    pendingLoginEmail = r.email;
+    authShow('authChangePassword');
+    return;
+  }
+  applyLoginResult(r);
+  enterApp();
+  toast('ようこそ、'+(session.nick||'会員')+'さん！');
+}
+
+document.getElementById('forgotSubmitBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('forgotEmail').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('メールアドレスの形式が正しくありません'); return; }
+  toast('送信中…');
+  const r = await api('forgotPassword', {email});
+  if(!r.ok){ toast('⚠ '+describeAuthError(r.error)); return; }
+  document.getElementById('forgotEmail').value='';
+  authShow('authForgotDone');
+});
+
+document.getElementById('changePasswordSubmitBtn').addEventListener('click', async ()=>{
+  const pw1 = document.getElementById('newPassword1').value;
+  const pw2 = document.getElementById('newPassword2').value;
+  if(pw1.length<8){ toast('パスワードは8文字以上にしてください'); return; }
+  if(pw1!==pw2){ toast('パスワードが一致しません'); return; }
+  const currentPassword = document.getElementById('loginPassword').value;
+  toast('設定中…');
+  const r = await api('changePassword', {email:pendingLoginEmail, currentPassword, newPassword:pw1});
+  if(!r.ok){ toast('⚠ '+describeAuthError(r.error)); return; }
+  applyLoginResult(r);
+  enterApp();
+  toast('パスワードを設定しました！');
+});
+
+document.getElementById('changePwProfileBtn').addEventListener('click', async ()=>{
+  const currentPassword = document.getElementById('curPwInput').value;
+  const pw1 = document.getElementById('newPwInput1').value;
+  const pw2 = document.getElementById('newPwInput2').value;
+  if(pw1.length<8){ toast('パスワードは8文字以上にしてください'); return; }
+  if(pw1!==pw2){ toast('新しいパスワードが一致しません'); return; }
+  toast('変更中…');
+  const r = await api('changePassword', {email:session.email, currentPassword, newPassword:pw1});
+  if(!r.ok){ toast('⚠ '+describeAuthError(r.error)); return; }
+  applyLoginResult(r);
+  document.getElementById('curPwInput').value=''; document.getElementById('newPwInput1').value=''; document.getElementById('newPwInput2').value='';
+  toast('🔑 パスワードを変更しました');
+});
+
+function applyLoginResult(r){
+  session = { token:r.token, uid:r.uid, email:r.email, nick:r.nick, interests:r.interests||[], bio:r.bio||'', isAdmin:!!r.isAdmin };
+  lsSet('minna_session_token', session.token);
+}
+
+function describeAuthError(code){
+  const map = {
+    INVALID_EMAIL:'メールアドレスの形式が正しくありません', NICKNAME_REQUIRED:'ニックネームを入力してください',
+    FULLNAME_REQUIRED:'氏名を入力してください', EMAIL_ALREADY_REGISTERED:'このメールアドレスは既に登録されています',
+    INVALID_CREDENTIALS:'メールアドレスまたはパスワードが正しくありません', ACCOUNT_DISABLED:'このアカウントは現在利用できません',
+    TERMS_NOT_AGREED:'注意事項・免責事項への同意が必要です', PASSWORD_TOO_SHORT:'パスワードは8文字以上にしてください',
+    SESSION_EXPIRED:'セッションの有効期限が切れました。再度ログインしてください', INVALID_SESSION:'再度ログインしてください',
+    NO_TOKEN:'ログインが必要です'
+  };
+  return map[code] || (code||'エラーが発生しました');
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  if(!confirm('ログアウトしますか？')) return;
+  await api('logout', {token:session.token});
+  localStorage.removeItem('minna_session_token');
+  location.reload();
+});
+
+/* 自動ログイン（保存済みトークンでセッション復元） */
+(async function autoLogin(){
+  const saved = lsGet('minna_session_token', '');
+  if(saved){
+    const r = await api('checkSession', {token:saved});
+    if(r.ok){ applyLoginResult(r); enterApp(); return; }
+    localStorage.removeItem('minna_session_token');
+  }
+})();
+INTERESTS.forEach(t=>{
+  const b=document.createElement('button'); b.className='tag-btn'; b.type='button'; b.textContent=t;
+  b.addEventListener('click',()=>b.classList.toggle('selected'));
+  document.getElementById('regInterestTags').appendChild(b);
+});
+
+/* ═══ データ取得＆全描画 ═══ */
+async function refreshData(){
+  const r = await api('listAll', {token:session.token});
+  if(!r.ok){ toast('⚠ '+describeAuthError(r.error)); return; }
+  DB = {members:r.members||[], ideas:r.ideas||[], events:r.events||[], help:r.help||[], memories:r.memories||[]};
+  session.isAdmin = !!r.isAdmin;
+  renderIdeas(); renderEvents(); renderHelp(); renderMembers(); renderMemories();
+  if(session.isAdmin){ document.getElementById('adminTabBtn').style.display=''; renderAdmin(); }
+}
+
+/* ═══ タブ＆サブタブ ═══ */
+const isMobile = ()=>window.matchMedia('(max-width:768px)').matches;
+document.querySelectorAll('#mainTabs button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#mainTabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(isMobile()) window.scrollTo({top:0,behavior:'instant'});
+    if(btn.dataset.tab==='map' && typeof google!=='undefined' && gMap){
+      setTimeout(()=>{ google.maps.event.trigger(gMap,'resize'); if(gMarker) gMap.setCenter(gMarker.getPosition()); },100);
+    }
+  });
+});
+function switchTab(t){
+  document.querySelectorAll('#mainTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+  if(isMobile()) window.scrollTo({top:0,behavior:'instant'});
+}
+function switchSub(s){
+  document.querySelectorAll('.sub-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.sub===s));
+  document.querySelectorAll('.sub-view').forEach(v=>v.style.display='none');
+  document.getElementById('sub-'+s).style.display='';
+  if(s==='now' && typeof google!=='undefined' && gMap){
+    setTimeout(()=>google.maps.event.trigger(gMap,'resize'),100);
+  }
+}
+document.getElementById('profileBtn').addEventListener('click',()=>switchTab('profile'));
+
+/* ═══ 地図・ストリートビュー ═══ */
+let currentPlace=null, gMap=null, gSV=null, gMarker=null, gPano=null;
+window.initMapsCallback = function(){
+  const mapEl=document.getElementById('map-container'), svEl=document.getElementById('sv-container');
+  mapEl.innerHTML=''; svEl.innerHTML='';
+  gMap = new google.maps.Map(mapEl,{center:{lat:35.6812,lng:139.7671},zoom:14});
+  gSV = new google.maps.StreetViewService();
+  gPano = new google.maps.StreetViewPanorama(svEl,{addressControl:true,linksControl:true,enableCloseButton:false});
+  gMap.setStreetView(gPano);
+};
+function doSearch(){
+  const q=document.getElementById('mapSearch').value.trim();
+  if(!q){ toast('場所を入力してください'); return; }
+  currentPlace={name:q};
+  document.getElementById('placeCta').style.display='flex';
+  if(typeof google==='undefined'){
+    const enc=encodeURIComponent(q);
+    document.getElementById('map-container').innerHTML=
+      '<div style="text-align:center;padding:1rem"><a href="https://maps.google.com/?q='+enc+'" target="_blank" style="color:var(--sky);font-weight:700">Googleマップで「'+esc(q)+'」を開く →</a></div>';
+    document.getElementById('sv-container').innerHTML=
+      '<div style="text-align:center;padding:1rem;font-size:.85rem">地図埋め込みはAPIキー設定後に有効になります</div>';
+    return;
+  }
+  new google.maps.Geocoder().geocode({address:q},(results,status)=>{
+    if(status!=='OK'||!results[0]){ toast('場所が見つかりませんでした'); return; }
+    const loc=results[0].geometry.location;
+    currentPlace={name:q,lat:loc.lat(),lng:loc.lng()};
+    gMap.setCenter(loc); gMap.setZoom(16);
+    if(gMarker) gMarker.setMap(null);
+    gMarker=new google.maps.Marker({position:loc,map:gMap,title:q});
+    gSV.getPanorama({location:loc,radius:100},(d,s)=>{
+      if(s==='OK'){ gPano.setPosition(loc); gPano.setPov({heading:34,pitch:10}); }
+      else document.getElementById('sv-container').innerHTML='<div style="text-align:center;padding:1rem">⚠ この場所のストリートビューはありません</div>';
+    });
+  });
+}
+document.getElementById('searchBtn').addEventListener('click',doSearch);
+document.getElementById('mapSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
+let resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{ if(typeof google!=='undefined'&&gMap){
+    google.maps.event.trigger(gMap,'resize'); if(gMarker) gMap.setCenter(gMarker.getPosition()); }},200);
+});
+
+/* ═══ お気に入り（端末内） ═══ */
+function renderFavs(){
+  const el=document.getElementById('favList');
+  if(!favorites.length){ el.innerHTML='<div class="empty"><div class="empty-icon">📭</div>まだお気に入りはありません</div>'; return; }
+  el.innerHTML=favorites.map((f,i)=>
+    '<div class="fav-item" onclick="loadFav('+i+')"><div>'
+    +'<div class="fav-name">📍 '+esc(f.name)+'</div>'
+    +'<div class="fav-meta">'+(f.year?esc(f.year)+'年頃 • ':'')+esc(f.memo||'')+'</div></div>'
+    +'<div class="fav-actions">'
+    +'<button class="btn btn-amber btn-sm" onclick="event.stopPropagation();favToIdea('+i+')">💡 企画へ</button>'
+    +'<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteFav('+i+')">🗑</button>'
+    +'</div></div>').join('');
+}
+document.getElementById('addFavBtn').addEventListener('click',()=>{
+  const name=document.getElementById('mapSearch').value.trim();
+  if(!name){ toast('先に場所を入力してください'); return; }
+  if(favorites.some(f=>f.name===name)){ toast('すでに追加済みです'); return; }
+  favorites.push({name, year:document.getElementById('yearInput').value,
+    memo:document.getElementById('memoInput').value.trim()});
+  lsSet('minna_favs',favorites); renderFavs(); toast('♡ 追加しました！');
+});
+window.loadFav=i=>{ const f=favorites[i];
+  document.getElementById('mapSearch').value=f.name;
+  document.getElementById('yearInput').value=f.year||'';
+  document.getElementById('memoInput').value=f.memo||'';
+  doSearch(); window.scrollTo({top:0,behavior:'smooth'}); };
+window.deleteFav=i=>{ favorites.splice(i,1); lsSet('minna_favs',favorites); renderFavs(); };
+window.favToIdea=i=>fillIdeaFromPlace(favorites[i].name);
+document.getElementById('clearFavBtn').addEventListener('click',()=>{
+  if(favorites.length&&confirm('お気に入りをすべて削除しますか？')){
+    favorites=[]; lsSet('minna_favs',favorites); renderFavs(); }
+});
+
+/* 場所→企画・比較 連携 */
+document.getElementById('placeToEventBtn').addEventListener('click',()=>{
+  if(currentPlace) fillIdeaFromPlace(currentPlace.name); });
+document.getElementById('placeToCompareBtn').addEventListener('click',()=>{
+  switchSub('compare');
+  if(currentPlace) document.getElementById('memPlace').value=currentPlace.name;
+  toast('📷 昔の写真を選んでくらべましょう'); });
+function fillIdeaFromPlace(name){
+  switchTab('ideas');
+  document.getElementById('ideaTitle').value='「'+name+'」を一緒に訪れたい';
+  document.getElementById('ideaPlace').value=name;
+  document.querySelectorAll('#catTags .tag-btn').forEach(b=>
+    b.classList.toggle('selected',b.dataset.cat==='思い出の場所'));
+  selectedCat='思い出の場所';
+  toast('💡 アイデア投稿欄に反映しました！');
+}
+
+/* ═══ 思い出くらべ ═══ */
+let oldImgSrc=null, nowImgSrc=null, nowSvUrl=null, cmpMode='side';
+
+function setupDrop(dropId, fileId, msgId, onLoad){
+  const drop=document.getElementById(dropId), file=document.getElementById(fileId);
+  drop.addEventListener('click',()=>file.click());
+  file.addEventListener('change',()=>{ if(file.files[0]) readImg(file.files[0]); });
+  drop.addEventListener('dragover',e=>{ e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+  drop.addEventListener('drop',e=>{ e.preventDefault(); drop.classList.remove('drag');
+    if(e.dataTransfer.files[0]) readImg(e.dataTransfer.files[0]); });
+  function readImg(f){
+    if(!f.type.startsWith('image/')){ toast('画像ファイルを選んでください'); return; }
+    const r=new FileReader();
+    r.onload=()=>{ onLoad(r.result);
+      drop.innerHTML='<img src="'+r.result+'" alt="選択した写真">'; renderCompare(); };
+    r.readAsDataURL(f);
+  }
+}
+setupDrop('oldDrop','oldFile','oldDropMsg', src=>{ oldImgSrc=src; });
+setupDrop('nowDrop','nowFile','nowDropMsg', src=>{ nowImgSrc=src; nowSvUrl=null; });
+
+document.getElementById('svUrlApplyBtn').addEventListener('click', async ()=>{
+  let v = document.getElementById('svUrlInput').value.trim();
+  if(!v){ toast('URLか埋め込みコードを貼り付けてください'); return; }
+
+  // ① <iframe src="..."> 埋め込みコードから src を抽出
+  const iframeSrc = v.match(/src=["']([^"']+)["']/);
+  if(iframeSrc) v = iframeSrc[1];
+
+  // ② すでに埋め込みURL（/maps/embed）→ そのまま表示
+  if(/google\.[^/]+\/maps\/embed/.test(v)){
+    applySvUrl(v); return;
+  }
+
+  // ③ maps.app.goo.gl 短縮URL → GASプロキシで実URLを展開
+  if(/maps\.app\.goo\.gl\//.test(v)){
+    toast('🔗 URLを解析中…'); setApplyBtnLoading(true);
+    try{
+      const expanded = await expandShortUrl(v);
+      if(expanded){
+        v = expanded;
+        // 展開後のURLで座標抽出に続く（④へ fall-through）
+      } else {
+        // 展開失敗 → リンク表示
+        applyMapLink(v, 'Googleマップで開く');
+        return;
+      }
+    } finally { setApplyBtnLoading(false); }
+  }
+
+  // ④ 展開済みの google.com/maps URL から座標を抽出してSVを表示
+  if(/google\.[^/]+\/maps/.test(v)){
+    // パターンA: @lat,lng（ストリートビュー・マップ共通）
+    const coordA = v.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    // パターンB: !2d経度!3d緯度 (pb=パラメータ内)
+    const coordB = v.match(/!3d(-?\d+\.\d+).*?!2d(-?\d+\.\d+)/);
+    // パターンC: q=lat,lng
+    const coordC = v.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+
+    let lat, lng;
+    if(coordA){ lat=coordA[1]; lng=coordA[2]; }
+    else if(coordB){ lat=coordB[1]; lng=coordB[2]; }
+    else if(coordC){ lat=coordC[1]; lng=coordC[2]; }
+
+    if(lat && lng){
+      if(GMAPS_API_KEY){
+        // Maps Embed API StreetView モード（最高品質）
+        const svEmbed = 'https://www.google.com/maps/embed/v1/streetview'
+          + '?key=' + encodeURIComponent(GMAPS_API_KEY)
+          + '&location=' + lat + ',' + lng + '&fov=90&heading=0&pitch=0';
+        applySvUrl(svEmbed); return;
+      } else {
+        // APIキーなし → 標準埋め込みURLを構築（制限ありだが表示可）
+        const fallback = 'https://maps.google.com/maps?q='
+          + lat + ',' + lng + '&output=embed&hl=ja';
+        applySvUrl(fallback); return;
+      }
+    }
+
+    // 座標が取れなかった場合 → 場所名で検索
+    const placeQ = v.match(/\/maps\/(?:place|search)\/([^/@?]+)/);
+    if(placeQ && GMAPS_API_KEY){
+      const place = decodeURIComponent(placeQ[1].replace(/\+/g,' '));
+      const placeEmbed = 'https://www.google.com/maps/embed/v1/place'
+        + '?key=' + encodeURIComponent(GMAPS_API_KEY)
+        + '&q=' + encodeURIComponent(place) + '&zoom=18';
+      applySvUrl(placeEmbed); return;
+    }
+
+    // 最終フォールバック：リンク表示
+    applyMapLink(v, 'Googleマップで開く');
+    return;
+  }
+
+  toast('⚠ Googleマップ以外のURLは使用できません');
+});
+
+// GASプロキシで短縮URLを展開
+async function expandShortUrl(shortUrl){
+  if(!GAS_API_URL){
+    // GAS未設定時：座標が取れないのでnullを返す
+    toast('⚠ GAS_API_URL未設定のため短縮URLを展開できません。\niframeの埋め込みコードをお試しください');
+    return null;
+  }
+  try{
+    const res = await fetch(GAS_API_URL + '?action=expandUrl&url=' + encodeURIComponent(shortUrl));
+    const data = await res.json();
+    if(data.ok && data.expandedUrl) return data.expandedUrl;
+  } catch(e){ /* 通信エラーは無視してnull返却 */ }
+  return null;
+}
+
+function setApplyBtnLoading(on){
+  const btn = document.getElementById('svUrlApplyBtn');
+  btn.disabled = on;
+  btn.textContent = on ? '解析中…' : '反映する';
+}
+
+function applySvUrl(url){
+  nowSvUrl = url; nowImgSrc = null;
+  const nowDrop = document.getElementById('nowDrop');
+  nowDrop.innerHTML = '<div style="text-align:center;padding:.5rem;font-size:.85rem;color:var(--sage)">✅ 地図・ストリートビューを設定しました<br><span style="font-size:.72rem;color:#888">「くらべ方をえらぶ」欄で確認できます</span></div>';
+  renderCompare();
+  toast('🔭 地図を反映しました');
+}
+
+function applyMapLink(url, label){
+  nowSvUrl = null; nowImgSrc = null;
+  const nowDrop = document.getElementById('nowDrop');
+  nowDrop.innerHTML = '<div style="text-align:center;padding:1rem">'
+    + '<a href="' + esc(url) + '" target="_blank" style="color:var(--sky);font-weight:700">🗺️ ' + esc(label) + ' →</a><br>'
+    + '<span style="font-size:.78rem;color:#888;margin-top:.4rem;display:block">'
+    + 'このURLは直接埋め込めません。<br>'
+    + 'Googleマップ → 共有 →「地図を埋め込む」の<br>iframeコードを貼り付けてください</span></div>';
+  toast('⚠ このURLは埋め込み不可のためリンクとして表示します');
+}
+
+function setCmpMode(m){
+  cmpMode=m;
+  document.querySelectorAll('.cmp-mode-btns .tag-btn').forEach(b=>
+    b.classList.toggle('selected',b.dataset.mode===m));
+  renderCompare();
+}
+
+function nowLayerHtml(cls){
+  if(nowImgSrc) return '<img class="'+cls+'" src="'+nowImgSrc+'" alt="現在の風景">';
+  if(nowSvUrl)  return '<iframe class="'+cls+'" src="'+esc(nowSvUrl)+'" allowfullscreen loading="lazy"></iframe>';
+  return null;
+}
+
+function renderCompare(){
+  const area=document.getElementById('cmpArea');
+  const sliderRow=document.getElementById('cmpSliderRow');
+  const hasOld=!!oldImgSrc, hasNow=!!(nowImgSrc||nowSvUrl);
+  if(!hasOld&&!hasNow){
+    area.innerHTML='<div class="empty"><div class="empty-icon">🖼</div>手順1・2の写真を用意すると、ここに比較画面が表示されます</div>';
+    sliderRow.style.display='none'; return;
+  }
+  if(!hasOld||!hasNow){
+    area.innerHTML='<div class="empty"><div class="empty-icon">'+(hasOld?'2️⃣':'1️⃣')+'</div>'
+      +(hasOld?'手順2で「現在の風景」を用意してください':'手順1で「昔の写真」を選んでください')+'</div>';
+    sliderRow.style.display='none'; return;
+  }
+
+  if(cmpMode==='side'){
+    area.innerHTML='<div class="cmp-side">'
+      +'<div><span class="cmp-label">むかし</span><img src="'+oldImgSrc+'" alt="昔の写真"></div>'
+      +'<div><span class="cmp-label">いま</span>'+nowLayerHtml('')+'</div></div>';
+    sliderRow.style.display='none';
+  }
+  else if(cmpMode==='slider'){
+    area.innerHTML='<div class="cmp-stage">'
+      +nowLayerHtml('layer')
+      +'<img class="layer" id="cmpOldLayer" src="'+oldImgSrc+'" alt="昔の写真" style="clip-path:inset(0 50% 0 0)">'
+      +'<span class="cmp-label">← むかし ｜ いま →</span></div>';
+    document.getElementById('cmpSliderLeft').textContent='← 昔を広く';
+    document.getElementById('cmpSliderRight').textContent='今を広く →';
+    sliderRow.style.display='flex';
+    applySlider();
+  }
+  else{ // opacity
+    area.innerHTML='<div class="cmp-stage">'
+      +'<img class="layer" src="'+oldImgSrc+'" alt="昔の写真">'
+      +(nowImgSrc
+        ? '<img class="layer" id="cmpNowLayer" src="'+nowImgSrc+'" alt="現在の風景" style="opacity:.5">'
+        : '<iframe class="layer" id="cmpNowLayer" src="'+esc(nowSvUrl)+'" style="opacity:.5" loading="lazy"></iframe>')
+      +'<span class="cmp-label">🌗 透過くらべ</span></div>';
+    document.getElementById('cmpSliderLeft').textContent='← 昔の写真だけ';
+    document.getElementById('cmpSliderRight').textContent='現在だけ →';
+    sliderRow.style.display='flex';
+    applySlider();
+  }
+}
+document.getElementById('cmpSlider').addEventListener('input',applySlider);
+function applySlider(){
+  const v=Number(document.getElementById('cmpSlider').value);
+  if(cmpMode==='slider'){
+    const el=document.getElementById('cmpOldLayer');
+    if(el) el.style.clipPath='inset(0 '+(100-v)+'% 0 0)';
+  }else if(cmpMode==='opacity'){
+    const el=document.getElementById('cmpNowLayer');
+    if(el) el.style.opacity=String(v/100);
+  }
+}
+
+/* ═══ 思い出メモ投稿・一覧 ═══ */
+document.getElementById('postMemoryBtn').addEventListener('click', async ()=>{
+  const place=document.getElementById('memPlace').value.trim();
+  const comment=document.getElementById('memComment').value.trim();
+  if(!place||!comment){ toast('場所とひとことを入力してください'); return; }
+  toast('投稿中…');
+  const r=await api('addMemory',{token:session.token,
+    place, era:document.getElementById('memEra').value.trim(), comment});
+  if(!r.ok){ toast('⚠ '+(r.error||'投稿失敗')); return; }
+  document.getElementById('memPlace').value='';
+  document.getElementById('memEra').value='';
+  document.getElementById('memComment').value='';
+  await refreshData(); switchSub('memories');
+  toast('📖 思い出を投稿しました！');
+});
+
+function canDelete(item){ return session.isAdmin || !!item.mine; }
+
+function renderMemories(){
+  const el=document.getElementById('memoriesList');
+  if(!DB.memories.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📖</div>まだ思い出はありません。<br>「思い出くらべ」から最初の1件を投稿しましょう</div>'; return; }
+  el.innerHTML=DB.memories.map(m=>
+    '<div class="idea-card"><div class="ic-header"><div>'
+    +'<span class="badge badge-sage">📖 '+esc(m.era||'年代不明')+'</span>'
+    +'<div class="ic-title" style="margin-top:.3rem">📍 '+esc(m.place)+'</div></div>'
+    +(canDelete(m)?'<button class="btn btn-danger btn-sm" onclick="delItem(\'memories\',\''+m.id+'\')">🗑</button>':'')
+    +'</div><div class="ic-body">'+esc(m.comment)+'</div>'
+    +'<div class="ic-meta"><span>👤 '+esc(m.nick||'会員')+'</span></div>'
+    +'<div style="margin-top:.6rem"><button class="btn btn-amber btn-sm" onclick="memToIdea(\''+esc(m.place)+'\')">💡 ここを一緒に歩きませんか</button></div>'
+    +'</div>').join('');
+}
+window.memToIdea=place=>fillIdeaFromPlace(place);
+
+/* ═══ アイデア ═══ */
+let selectedCat='食事';
+document.querySelectorAll('#catTags .tag-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#catTags .tag-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedCat=btn.dataset.cat; });
+});
+const CAT_ICONS={'食事':'🍜','屋外':'⛺','運動':'🎾','旅行':'✈️','学び':'📚','趣味':'🎨','ドライブ':'🚗','思い出の場所':'🗺️'};
+
+function renderIdeas(){
+  const el=document.getElementById('ideasList');
+  if(!DB.ideas.length){ el.innerHTML='<div class="empty"><div class="empty-icon">💡</div>まだ投稿がありません</div>'; return; }
+  el.innerHTML=DB.ideas.map(x=>
+    '<div class="idea-card"><div class="ic-header"><div>'
+    +'<span class="badge badge-amber">'+(CAT_ICONS[x.cat]||'💡')+' '+esc(x.cat)+'</span>'
+    +'<div class="ic-title" style="margin-top:.3rem">'+esc(x.title)+'</div></div>'
+    +(canDelete(x)?'<button class="btn btn-danger btn-sm" onclick="delItem(\'ideas\',\''+x.id+'\')">🗑</button>':'')
+    +'</div><div class="ic-body">'+esc(x.desc||'')+'</div>'
+    +'<div class="ic-meta">'+(x.place?'📍 '+esc(x.place)+' ':'')
+    +'<span>👍 '+(x.interested||0)+' 人が興味あり</span><span>👤 '+esc(x.nick||'会員')+'</span></div>'
+    +'<div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap">'
+    +'<button class="btn btn-sky btn-sm" onclick="bumpItem(\'ideas\',\''+x.id+'\')">👍 興味あり！</button>'
+    +'<button class="btn btn-amber btn-sm" onclick="ideaToEvent(\''+x.id+'\')">📣 企画にする</button>'
+    +'</div></div>').join('');
+}
+document.getElementById('postIdeaBtn').addEventListener('click', async ()=>{
+  const title=document.getElementById('ideaTitle').value.trim();
+  if(!title){ toast('やってみたいことを入力してください'); return; }
+  toast('投稿中…');
+  const r=await api('addIdea',{token:session.token,
+    title,cat:selectedCat,desc:document.getElementById('ideaDesc').value.trim(),
+    place:document.getElementById('ideaPlace').value.trim()});
+  if(!r.ok){ toast('⚠ '+(r.error||'投稿失敗')); return; }
+  document.getElementById('ideaTitle').value='';
+  document.getElementById('ideaDesc').value='';
+  document.getElementById('ideaPlace').value='';
+  await refreshData(); toast('🎉 投稿しました！');
+});
+window.ideaToEvent=id=>{
+  const x=DB.ideas.find(i=>i.id===id); if(!x) return;
+  switchTab('events');
+  document.getElementById('evTitle').value=x.title;
+  document.getElementById('evPlace').value=x.place||'';
+  document.getElementById('evDesc').value=x.desc||'';
+  toast('📣 日程を入れて公開しましょう');
+};
+
+/* ═══ イベント ═══ */
+function renderEvents(){
+  const el=document.getElementById('eventsList');
+  if(!DB.events.length){ el.innerHTML='<div class="empty"><div class="empty-icon">📣</div>まだ公開イベントはありません</div>'; return; }
+  el.innerHTML=DB.events.map(x=>
+    '<div class="idea-card"><div class="ic-header"><div>'
+    +'<span class="badge badge-sky">📣 イベント</span>'
+    +'<div class="ic-title" style="margin-top:.3rem">'+esc(x.title)+'</div></div>'
+    +(canDelete(x)?'<button class="btn btn-danger btn-sm" onclick="delItem(\'events\',\''+x.id+'\')">🗑</button>':'')
+    +'</div><div class="ic-body">'+esc(x.desc||'')+'</div>'
+    +'<div class="ic-meta">'+(x.date?'📅 '+esc(x.date)+' ':'')+(x.place?'📍 '+esc(x.place)+' ':'')
+    +'<span>✅ '+(x.rsvp||0)+' 人参加予定</span><span>👤 '+esc(x.nick||'会員')+'</span></div>'
+    +'<div style="margin-top:.6rem"><button class="btn btn-sage btn-sm" onclick="bumpItem(\'events\',\''+x.id+'\')">✅ 参加する！</button></div>'
+    +'</div>').join('');
+}
+document.getElementById('postEventBtn').addEventListener('click', async ()=>{
+  const title=document.getElementById('evTitle').value.trim();
+  if(!title){ toast('イベント名を入力してください'); return; }
+  toast('公開中…');
+  const r=await api('addEvent',{token:session.token,
+    title,date:document.getElementById('evDate').value.trim(),
+    place:document.getElementById('evPlace').value.trim(),
+    desc:document.getElementById('evDesc').value.trim()});
+  if(!r.ok){ toast('⚠ '+(r.error||'公開失敗')); return; }
+  ['evTitle','evDate','evPlace','evDesc'].forEach(id=>document.getElementById(id).value='');
+  await refreshData(); toast('🎉 イベントを公開しました！');
+});
+
+window.bumpItem=async (type,id)=>{
+  const r=await api('bump',{token:session.token,type,id});
+  if(r.ok){ await refreshData(); toast(type==='ideas'?'👍 興味ありを押しました！':'✅ 参加表明しました！'); }
+};
+window.delItem=async (type,id)=>{
+  if(!confirm('削除しますか？')) return;
+  const r=await api('deleteItem',{token:session.token,type,id});
+  if(!r.ok){ toast('⚠ '+(r.error||'削除失敗')); return; }
+  await refreshData(); toast('削除しました');
+};
+
+/* ═══ 助け合い ═══ */
+let helpType='need', selHelpTags=[];
+document.getElementById('helpTypeNeed').addEventListener('click',()=>{ helpType='need';
+  document.getElementById('helpTypeNeed').classList.add('selected');
+  document.getElementById('helpTypeSkill').classList.remove('selected'); });
+document.getElementById('helpTypeSkill').addEventListener('click',()=>{ helpType='skill';
+  document.getElementById('helpTypeSkill').classList.add('selected');
+  document.getElementById('helpTypeNeed').classList.remove('selected'); });
+const helpTagEl=document.getElementById('helpTagBtns');
+HELP_TAGS.forEach(t=>{
+  const b=document.createElement('button'); b.className='tag-btn'; b.type='button'; b.textContent=t;
+  b.addEventListener('click',()=>{ b.classList.toggle('selected');
+    selHelpTags=[...helpTagEl.querySelectorAll('.selected')].map(x=>x.textContent); });
+  helpTagEl.appendChild(b);
+});
+function renderHelp(){
+  const el=document.getElementById('helpList');
+  if(!DB.help.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🤝</div>まだ投稿がありません</div>'; return; }
+  el.innerHTML=DB.help.map(h=>
+    '<div class="help-card '+(h.type==='skill'?'skill':'')+'"><div class="ic-header"><div>'
+    +'<span class="badge '+(h.type==='need'?'badge-sky':'badge-sage')+'">'+(h.type==='need'?'🙋 困っていること':'💪 できること')+'</span>'
+    +'<div class="hc-title" style="margin-top:.2rem">'+esc(h.title)+'</div>'
+    +'<div class="hc-meta">'+(Array.isArray(h.tags)?h.tags.map(esc).join(' • '):'')+' ｜ 👤 '+esc(h.nick||'会員')+'</div></div>'
+    +(canDelete(h)?'<button class="btn btn-danger btn-sm" onclick="delItem(\'help\',\''+h.id+'\')">🗑</button>':'')
+    +'</div></div>').join('');
+}
+document.getElementById('postHelpBtn').addEventListener('click', async ()=>{
+  const title=document.getElementById('helpTitle').value.trim();
+  if(!title){ toast('ひとこと入力してください'); return; }
+  toast('投稿中…');
+  const r=await api('addHelp',{token:session.token,
+    type:helpType,title,tags:selHelpTags});
+  if(!r.ok){ toast('⚠ '+(r.error||'投稿失敗')); return; }
+  document.getElementById('helpTitle').value='';
+  helpTagEl.querySelectorAll('.selected').forEach(b=>b.classList.remove('selected'));
+  selHelpTags=[];
+  await refreshData(); toast('投稿しました！');
+});
+
+/* ═══ 仲間 ═══ */
+const interestFilterEl=document.getElementById('interestFilterTags');
+let selInterestFilter=[];
+INTERESTS.forEach(t=>{
+  const b=document.createElement('button'); b.className='tag-btn'; b.type='button'; b.textContent=t;
+  b.addEventListener('click',()=>{ b.classList.toggle('selected');
+    selInterestFilter=[...interestFilterEl.querySelectorAll('.selected')].map(x=>x.textContent);
+    renderMembers(); });
+  interestFilterEl.appendChild(b);
+});
+const AVATARS=['🌸','⛺','🌺','🎣','📚','🍀','🎵','☕','🌻','🚲'];
+function renderMembers(){
+  const el=document.getElementById('membersList');
+  const list = selInterestFilter.length
+    ? DB.members.filter(m=>(m.interests||[]).some(i=>selInterestFilter.includes(i)))
+    : DB.members;
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>一致する会員がいません</div>'; return; }
+  el.innerHTML='<div class="members-grid">'+list.map((m,i)=>
+    '<div class="member-card"><div class="member-avatar">'
+    +(m.isMe?'⭐':AVATARS[i%AVATARS.length])+'</div>'
+    +'<div class="member-name">'+esc(m.nick||'会員')+(m.isMe?'（あなた）':'')+'</div>'
+    +'<div class="member-tags">'+(m.interests||[]).slice(0,4).map(t=>'<span class="badge badge-sky">'+esc(t)+'</span>').join('')+'</div>'
+    +'</div>').join('')+'</div>';
+}
+
+/* ═══ プロフィール ═══ */
+function buildProfileTags(){
+  const el=document.getElementById('profileInterestTags'); el.innerHTML='';
+  INTERESTS.forEach(t=>{
+    const b=document.createElement('button'); b.className='tag-btn'; b.type='button'; b.textContent=t;
+    if((session.interests||[]).includes(t)) b.classList.add('selected');
+    b.addEventListener('click',()=>b.classList.toggle('selected'));
+    el.appendChild(b);
+  });
+}
+document.getElementById('saveProfileBtn').addEventListener('click', async ()=>{
+  const nick=document.getElementById('nickInput').value.trim();
+  if(!nick){ toast('ニックネームを入力してください'); return; }
+  const interests=[...document.querySelectorAll('#profileInterestTags .selected')].map(b=>b.textContent);
+  const bio=document.getElementById('bioInput').value.trim();
+  toast('保存中…');
+  const r=await api('updateProfile',{token:session.token,nick,interests,bio});
+  if(!r.ok){ toast('⚠ '+(r.error||'保存失敗')); return; }
+  session.nick=nick; session.interests=interests; session.bio=bio;
+  document.getElementById('headerNick').textContent=nick;
+  await refreshData(); toast('💾 保存しました！');
+});
+
+/* ═══ 管理者パネル ═══ */
+const ADMIN_SECTIONS=[
+  {type:'members', icon:'👥', label:'会員一覧', key:'uid',
+   cols:[['email','メールアドレス'],['nick','ニックネーム'],['bio','自己紹介'],['created','登録日']]},
+  {type:'memories', icon:'📖', label:'思い出', key:'id',
+   cols:[['place','場所'],['era','年代'],['comment','内容'],['nick','投稿者']]},
+  {type:'ideas', icon:'💡', label:'アイデア', key:'id',
+   cols:[['title','タイトル'],['cat','カテゴリ'],['desc','内容'],['nick','投稿者']]},
+  {type:'events', icon:'📣', label:'イベント', key:'id',
+   cols:[['title','タイトル'],['date','日程'],['place','場所'],['nick','投稿者']]},
+  {type:'help', icon:'🙋', label:'助け合い', key:'id',
+   cols:[['title','内容'],['type','種類'],['nick','投稿者']]}
+];
+
+function renderAdmin(){
+  const root=document.getElementById('adminPanels');
+  root.innerHTML=ADMIN_SECTIONS.map(sec=>{
+    const rows=DB[sec.type]||[];
+    const head='<tr><th><input type="checkbox" onchange="adminToggleAll(\''+sec.type+'\',this.checked)"></th>'
+      +sec.cols.map(c=>'<th>'+c[1]+'</th>').join('')
+      +(sec.type!=='members'?'<th>編集</th>':'')+'</tr>';
+    const body=rows.length?rows.map(r=>{
+      const key=esc(String(r[sec.key]));
+      return '<tr id="adm-'+sec.type+'-'+key+'">'
+        +'<td><input type="checkbox" class="adm-chk-'+sec.type+'" value="'+key+'" onchange="this.closest(\'tr\').classList.toggle(\'checked\',this.checked)"></td>'
+        +sec.cols.map(c=>'<td>'+esc(String(r[c[0]]??'')).slice(0,60)+'</td>').join('')
+        +(sec.type!=='members'?'<td><button class="btn btn-ghost btn-sm" onclick="adminEdit(\''+sec.type+'\',\''+key+'\')">✏️</button></td>':'')
+        +'</tr>';
+    }).join(''):'<tr><td colspan="9" style="color:#aaa;text-align:center">データなし</td></tr>';
+    return '<div class="card admin-section"><div class="card-title" style="justify-content:space-between;flex-wrap:wrap">'
+      +'<span>'+sec.icon+' '+sec.label+'（'+rows.length+'件）</span>'
+      +'<button class="btn btn-danger btn-sm" onclick="adminBulkDelete(\''+sec.type+'\')">🗑 選択した項目を削除</button></div>'
+      +'<table class="admin-table"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+  }).join('');
+}
+window.adminToggleAll=(type,checked)=>{
+  document.querySelectorAll('.adm-chk-'+type).forEach(c=>{
+    c.checked=checked; c.closest('tr').classList.toggle('checked',checked); });
+};
+window.adminBulkDelete=async type=>{
+  const ids=[...document.querySelectorAll('.adm-chk-'+type+':checked')].map(c=>c.value);
+  if(!ids.length){ toast('削除する項目にチェックを入れてください'); return; }
+  const label=ADMIN_SECTIONS.find(s=>s.type===type).label;
+  if(!confirm(label+' '+ids.length+'件を削除します。よろしいですか？\n（スプレッドシートからも削除され、元に戻せません）')) return;
+  toast('削除中…');
+  const r=await api('adminDelete',{token:session.token,type,ids});
+  if(!r.ok){ toast('⚠ '+(r.error||'削除失敗')); return; }
+  await refreshData(); toast('🗑 '+(r.deleted??ids.length)+'件削除しました');
+};
+window.adminEdit=async (type,id)=>{
+  const item=(DB[type]||[]).find(x=>String(x.id)===String(id));
+  if(!item) return;
+  const fieldName = type==='memories'?'comment':'title';
+  const cur = item[fieldName]||'';
+  const v=prompt('新しい内容を入力してください：', cur);
+  if(v===null||v.trim()===''||v===cur) return;
+  const fields={}; fields[fieldName]=v.trim();
+  const r=await api('editItem',{token:session.token,type,id,fields});
+  if(!r.ok){ toast('⚠ '+(r.error||'編集失敗')); return; }
+  await refreshData(); toast('✏️ 更新しました');
+};
+document.getElementById('adminReloadBtn').addEventListener('click', async ()=>{
+  toast('再読み込み中…'); await refreshData(); toast('🔄 最新の状態です'); });
+
+/* ═══ 起動時描画 ═══ */
+renderFavs();
+
+/* ═══ Google Maps 読み込み ═══ */
+(function(){
+  if(!GMAPS_API_KEY) return;
+  const s=document.createElement('script');
+  s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_API_KEY)
+    +'&callback=initMapsCallback&libraries=places&language=ja';
+  s.async=true; s.defer=true;
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>
